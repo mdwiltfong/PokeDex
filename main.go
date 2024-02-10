@@ -8,12 +8,6 @@ import (
 	"github.com/mdwiltfong/commands"
 )
 
-type cliCommand struct {
-	name        string
-	description string
-	callback    func() error
-}
-
 func main() {
 	scanner := bufio.NewScanner(os.Stdin)
 	cliMap := commands.CliCommandMap()
