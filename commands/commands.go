@@ -1,26 +1,42 @@
 package commands
 
 import (
-	"errors"
+	"fmt"
 )
 
-type cliCommand struct {
-	name        string
-	description string
-	callback    func() error
+type CliCommand struct {
+	Name        string
+	Description string
+	Callback    func() error
 }
 
-func CliCommandMap() map[string]cliCommand {
+func CliCommandMap() map[string]CliCommand {
 
-	return map[string]cliCommand{
+	return map[string]CliCommand{
 		"help": {
-			name:        "help",
-			description: "Displays a help message",
-			callback:    helpCommand,
+			Name:        "help",
+			Description: "Displays a help message",
+			Callback:    helpCommand,
+		},
+		"exit": {
+			Name:        "exit",
+			Description: "Exits the REPL",
+			Callback:    exitCommand,
 		},
 	}
 
 }
 func helpCommand() error {
-	return errors.New("THere is no help")
+	fmt.Println("Welcome to the Pokedex!")
+	fmt.Println("Usage:")
+	fmt.Println("")
+	for key, value := range CliCommandMap() {
+		fmt.Println(key + ": " + value.Description)
+	}
+	fmt.Println("")
+	return nil
+}
+func exitCommand() error {
+	fmt.Println("Okay! See you next time!")
+	return nil
 }
