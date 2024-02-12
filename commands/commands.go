@@ -2,6 +2,8 @@ package commands
 
 import (
 	"fmt"
+
+	"github.com/mdwiltfong/utils"
 )
 
 type CliCommand struct {
@@ -22,6 +24,11 @@ func CliCommandMap() map[string]CliCommand {
 			Name:        "exit",
 			Description: "Exits the REPL",
 			Callback:    exitCommand,
+		},
+		"map": {
+			Name:        "map",
+			Description: "Sends a get request of maps in the pokemon game",
+			Callback:    utils.Map,
 		},
 	}
 
