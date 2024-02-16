@@ -73,6 +73,11 @@ func CliCommandMap() map[string]CliCommand {
 			Description: "Sends a get request of maps in the pokemon game",
 			Callback:    Map,
 		},
+		"mapb": {
+			Name:        "mapb",
+			Description: "Sends a get request of maps in the pokemon game",
+			Callback:    Mapb,
+		},
 	}
 
 }
@@ -120,6 +125,7 @@ func Map(config *Config) error {
 	var locations GetLocationsResponse
 	marshalingError := json.Unmarshal(responseBytes, &locations)
 	config.NEXT_URL = &locations.Next
+	config.PREV_URL = &locations.Previous
 	fmt.Println("Next URL: ", *config.NEXT_URL)
 	if marshalingError != nil {
 		log.Fatalf("Failed to unmarshal response: %s\n", marshalingError)
@@ -133,11 +139,16 @@ func Map(config *Config) error {
 
 func Mapb(config *Config) error {
 
+	if config.PREV_URL == nil || *config.PREV_URL == "" {
+		fmt.Println("There are no previous pages")
+		return nil
+	}
 	url := *config.PREV_URL
-
+	fmt.Println("Previous URL: ", *config.PREV_URL)
+	fmt.Println("Next URL: ", *config.NEXT_URL)
 	response, err := http.Get(url)
 	if err != nil {
-		errors.New("There was an issue with the API request")
+		return errors.New("there was an issue with the API request")
 	}
 	body, _ := io.ReadAll(response.Body)
 	if response.StatusCode > 299 {
@@ -152,6 +163,7 @@ func Mapb(config *Config) error {
 	for _, location := range locations.Results {
 		fmt.Println(location.Name)
 	}
-
+	config.NEXT_URL = &locations.Next
+	config.PREV_URL = &locations.Previous
 	return nil
 }
