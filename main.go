@@ -22,14 +22,14 @@ func main() {
 	scanner := bufio.NewScanner(os.Stdin)
 	cliMap := CliCommandMap()
 	fmt.Print("PokeDex > ")
+	config := &Config{
+		PREV_URL: nil,
+		NEXT_URL: nil,
+	}
 	for scanner.Scan() {
 		input := scanner.Text()
 		sanitizedInput := sanitizeInput(input)
 		command, exists := cliMap[sanitizedInput]
-		config := &Config{
-			PREV_URL: nil,
-			NEXT_URL: nil,
-		}
 
 		if exists {
 			command.Callback(config)
