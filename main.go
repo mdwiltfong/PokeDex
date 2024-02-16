@@ -28,7 +28,7 @@ func main() {
 	}
 	for scanner.Scan() {
 		input := scanner.Text()
-		sanitizedInput := sanitizeInput(input)
+		sanitizedInput := SanitizeInput(input)
 		command, exists := cliMap[sanitizedInput]
 
 		if exists {
@@ -43,7 +43,7 @@ func main() {
 	}
 }
 
-func sanitizeInput(input string) string {
+func SanitizeInput(input string) string {
 	output := strings.TrimSpace(input)
 	output = strings.ToLower(input)
 	return output
