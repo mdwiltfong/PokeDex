@@ -1,4 +1,4 @@
-package main
+package utils
 
 import (
 	"encoding/json"
@@ -9,6 +9,11 @@ import (
 	"net/http"
 	"strings"
 )
+
+type Config struct {
+	PREV_URL *string
+	NEXT_URL *string
+}
 
 func SanitizeInput(input string) string {
 	output := strings.TrimSpace(input)

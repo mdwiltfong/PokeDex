@@ -1,6 +1,10 @@
 package main
 
+import (
+	"github.com/mdwiltfong/PokeDex/internal/utils"
+)
+
 func main() {
-	cfg := &Config{}
-	StartRepl(cfg)
+	cfg := &utils.Config{}
+	utils.StartRepl(cfg)
 }
