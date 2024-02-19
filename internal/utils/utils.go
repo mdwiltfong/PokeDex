@@ -116,8 +116,7 @@ func Mapb(config *Config) error {
 		return nil
 	}
 	url := *config.PREV_URL
-	fmt.Println("Previous URL: ", *config.PREV_URL)
-	fmt.Println("Next URL: ", *config.NEXT_URL)
+
 	response, err := http.Get(url)
 	if err != nil {
 		return errors.New("there was an issue with the API request")

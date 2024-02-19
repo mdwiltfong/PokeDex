@@ -14,8 +14,8 @@ func StartRepl(cfg *Config) {
 	fmt.Print("PokeDex > ")
 
 	for scanner.Scan() {
-		//input := scanner.Text()
-		input := "help"
+		input := scanner.Text()
+
 		sanitizedInput := SanitizeInput(input)
 		fmt.Println(sanitizedInput)
 		command, exists := cliMap[sanitizedInput]
