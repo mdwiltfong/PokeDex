@@ -14,10 +14,12 @@ func StartRepl(cfg *Config) {
 	fmt.Print("PokeDex > ")
 
 	for scanner.Scan() {
-		input := scanner.Text()
+		//input := scanner.Text()
+		input := "help"
 		sanitizedInput := SanitizeInput(input)
+		fmt.Println(sanitizedInput)
 		command, exists := cliMap[sanitizedInput]
-
+		fmt.Println(command, exists)
 		if exists {
 			command.Callback(cfg)
 		} else {
