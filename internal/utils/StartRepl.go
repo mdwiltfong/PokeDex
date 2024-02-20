@@ -4,9 +4,11 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+
+	"github.com/mdwiltfong/PokeDex/internal/pokeapiclient"
 )
 
-func StartRepl(cfg *Config) {
+func StartRepl(cfg *Config, client *pokeapiclient.Client) {
 
 	scanner := bufio.NewScanner(os.Stdin)
 	cliMap := CliCommandMap()
@@ -21,7 +23,7 @@ func StartRepl(cfg *Config) {
 		command, exists := cliMap[sanitizedInput]
 		fmt.Println(command, exists)
 		if exists {
-			command.Callback(cfg)
+			command.Callback(cfg, client)
 		} else {
 			fmt.Println("Hmm, this command doesn't exist. Try again")
 		}
