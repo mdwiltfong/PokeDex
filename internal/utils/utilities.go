@@ -122,10 +122,14 @@ func Mapb(config *Config, client *pokeapiclient.Client) error {
 	cachedBytes, exists := client.Cache.Get(url)
 
 	if !exists {
-		fmt.Println("No cached data")
+		fmt.Println("No cached data!!!!")
+		
 		response, err := client.HttpClient.Get(url)
 		if err != nil {
 			return errors.New("there was an issue with the API request")
+		}
+		if response == nil{
+			return errors.New("There was an issue with the API response")
 		}
 		body, _ := io.ReadAll(response.Body)
 		if response.StatusCode > 299 {
@@ -135,8 +139,11 @@ func Mapb(config *Config, client *pokeapiclient.Client) error {
 		locations, _ := UnmarshallAndPrint(responseBytes)
 		config.NEXT_URL = &locations.Next
 		config.PREV_URL = &locations.Previous
+
+
+		UnmarshallAndPrint(responseBytes)
 	} else {
-		fmt.Print("Cache Hit")
+		fmt.Println("Cache Hit")
 		UnmarshallAndPrint(cachedBytes)
 	}
 

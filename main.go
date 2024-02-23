@@ -7,6 +7,6 @@ import (
 
 func main() {
 	cfg := &utils.Config{}
-	client := pokeapiclient.NewClient(5000, 10000)
+	client := pokeapiclient.NewClient(50000, 10000)
 	utils.StartRepl(cfg, client)
 }

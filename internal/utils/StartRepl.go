@@ -19,9 +19,7 @@ func StartRepl(cfg *Config, client *pokeapiclient.Client) {
 		input := scanner.Text()
 
 		sanitizedInput := SanitizeInput(input)
-		fmt.Println(sanitizedInput)
 		command, exists := cliMap[sanitizedInput]
-		fmt.Println(command, exists)
 		if exists {
 			command.Callback(cfg, client)
 		} else {
