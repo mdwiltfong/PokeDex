@@ -144,6 +144,7 @@ func Mapb(config *Config, client *pokeapiclient.Client) error {
 		UnmarshallAndPrint(responseBytes)
 	} else {
 		fmt.Println("Cache Hit")
+		
 		UnmarshallAndPrint(cachedBytes)
 	}
 
