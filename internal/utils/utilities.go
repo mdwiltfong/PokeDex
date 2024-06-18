@@ -98,7 +98,7 @@ func Map(config *Config, client *pokeapiclient.Client) error {
 	var locations GetLocationsResponse
 	marshalingError := json.Unmarshal(responseBytes, &locations)
 	config.NEXT_URL = &locations.Next
-	config.PREV_URL = &locations.Previous
+	config.PREV_URL = &url
 	client.Cache.Add(url, responseBytes)
 	fmt.Println("Next URL: ", *config.NEXT_URL)
 	if marshalingError != nil {
@@ -123,12 +123,12 @@ func Mapb(config *Config, client *pokeapiclient.Client) error {
 
 	if !exists {
 		fmt.Println("No cached data!!!!")
-		
+
 		response, err := client.HttpClient.Get(url)
 		if err != nil {
 			return errors.New("there was an issue with the API request")
 		}
-		if response == nil{
+		if response == nil {
 			return errors.New("There was an issue with the API response")
 		}
 		body, _ := io.ReadAll(response.Body)
@@ -140,11 +140,10 @@ func Mapb(config *Config, client *pokeapiclient.Client) error {
 		config.NEXT_URL = &locations.Next
 		config.PREV_URL = &locations.Previous
 
-
 		UnmarshallAndPrint(responseBytes)
 	} else {
 		fmt.Println("Cache Hit")
-		
+		// TODO: When we hit the cache, we aren't changing the config URLs
 		UnmarshallAndPrint(cachedBytes)
 	}
 

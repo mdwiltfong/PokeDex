@@ -8,5 +8,5 @@ import (
 func main() {
 	cfg := &utils.Config{}
 	client := pokeapiclient.NewClient(50000, 10000)
-	utils.StartRepl(cfg, client)
+	utils.StartRepl(cfg, &client)
 }
