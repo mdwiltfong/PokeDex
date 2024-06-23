@@ -19,8 +19,7 @@ type Config struct {
 
 func SanitizeInput(input string) string {
 	output := strings.TrimSpace(input)
-	output = strings.ToLower(input)
-	return output
+	return strings.ToLower(output)
 }
 
 type CliCommand struct {
@@ -143,7 +142,7 @@ func Mapb(config *Config, client *pokeapiclient.Client) error {
 		UnmarshallAndPrint(responseBytes)
 	} else {
 		fmt.Println("Cache Hit")
-		// TODO: When we hit the cache, we aren't changing the config URLs
+
 		UnmarshallAndPrint(cachedBytes)
 	}
 
