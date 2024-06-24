@@ -63,8 +63,8 @@ func (h MapCommandResponse) Response() string {
 	return ""
 }
 func (h MapCommandResponse) Print() {
-	for loc := range h.Locations {
-		fmt.Println(loc)
+	for _, loc := range h.Locations {
+		fmt.Println(loc.Name)
 	}
 }
 
@@ -145,26 +145,23 @@ func Map(config *Config, client *pokeapiclient.Client) (CallbackResponse, error)
 		log.Fatalf("Response failed with status code: %d and\nbody: %s\n", response.StatusCode, body)
 	}
 	responseBytes := []byte(body)
-	var locations GetLocationsResponse
-	marshalingError := json.Unmarshal(responseBytes, &locations)
+
+	locations, marshalingError := Unmarshall(responseBytes)
+
 	config.NEXT_URL = &locations.Next
 	config.PREV_URL = &url
 	client.Cache.Add(url, responseBytes)
 	if marshalingError != nil {
 		log.Fatalf("Failed to unmarshal response: %s\n", marshalingError)
 	}
-	for _, location := range locations.Results {
-		fmt.Println(location.Name)
-	}
-
 	return MapCommandResponse{locations.Results}, nil
 }
 
-func Mapb(config *Config, client *pokeapiclient.Client) ([]Location, error) {
+func Mapb(config *Config, client *pokeapiclient.Client) (CallbackResponse, error) {
 
 	if config.PREV_URL == nil || *config.PREV_URL == "" {
 		fmt.Println("There are no previous pages")
-		return nil, errors.New("There are no previous pages")
+		return MapCommandResponse{}, errors.New("There are no previous pages")
 	}
 
 	url := *config.PREV_URL
@@ -175,10 +172,10 @@ func Mapb(config *Config, client *pokeapiclient.Client) ([]Location, error) {
 
 		response, err := client.HttpClient.Get(url)
 		if err != nil {
-			return nil, errors.New("there was an issue with the API request")
+			return MapCommandResponse{}, errors.New("there was an issue with the API request")
 		}
 		if response == nil {
-			return nil, errors.New("There was an issue with the API response")
+			return MapCommandResponse{}, errors.New("There was an issue with the API response")
 		}
 		body, _ := io.ReadAll(response.Body)
 		if response.StatusCode > 299 {
@@ -189,14 +186,14 @@ func Mapb(config *Config, client *pokeapiclient.Client) ([]Location, error) {
 		config.NEXT_URL = &locations.Next
 		config.PREV_URL = &locations.Previous
 
-		return locations.Results, nil
+		return MapCommandResponse{locations.Results}, nil
 	} else {
 		fmt.Println("Cache Hit")
 
 		Unmarshall(cachedBytes)
 	}
 
-	return nil, nil
+	return MapCommandResponse{}, nil
 }
 
 func Unmarshall(val []byte) (GetLocationsResponse, error) {
