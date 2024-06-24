@@ -35,6 +35,10 @@ func TestMap(t *testing.T) {
 	if exists == false {
 		t.Fatalf(`Map did not store the url:%v`, "https://pokeapi.co/api/v2/location/")
 	}
+	cacheLength := clientInput.Cache.Length()
+	if cacheLength > 1 {
+		t.Fatalf(`Cache should be 1 but was %v instead`, cacheLength)
+	}
 	if configInput.NEXT_URL == nil {
 		t.Fatalf(`The NEXT_URL should be set, but it was nill`)
 	}
