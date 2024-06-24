@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"net/http"
 	"strings"
 
 	"github.com/mdwiltfong/PokeDex/internal/pokeapiclient"
@@ -22,13 +21,64 @@ func SanitizeInput(input string) string {
 	return strings.ToLower(output)
 }
 
+type CallbackResponse interface {
+	Response() string
+	Print()
+}
+
+type HelpCommandResponse struct {
+	CliCommandMapType
+}
+
+func (h HelpCommandResponse) Response() string {
+	return ""
+}
+func (h HelpCommandResponse) Print() {
+	fmt.Println("Welcome to the Pokedex!")
+	fmt.Println("Usage:")
+	fmt.Println("")
+	for key, value := range h.CliCommandMapType {
+		fmt.Println(key + ": " + value.Description)
+	}
+	fmt.Println("")
+}
+
+type ExitCommandResponse struct {
+	Message string
+}
+
+func (h ExitCommandResponse) Response() string {
+	return h.Message
+}
+
+func (h ExitCommandResponse) Print() {
+	fmt.Println("Okay! See you next time!")
+}
+
+type MapCommandResponse struct {
+	Locations []Location
+}
+
+func (h MapCommandResponse) Response() string {
+	return ""
+}
+func (h MapCommandResponse) Print() {
+	for loc := range h.Locations {
+		fmt.Println(loc)
+	}
+}
+
+type CallbackFunction func(*Config, *pokeapiclient.Client) (CallbackResponse, error)
+
 type CliCommand struct {
 	Name        string
 	Description string
-	Callback    func(*Config, *pokeapiclient.Client) error
+	Callback    CallbackFunction
 }
 
-func CliCommandMap() map[string]CliCommand {
+type CliCommandMapType map[string]CliCommand
+
+func CliCommandMap() CliCommandMapType {
 
 	return map[string]CliCommand{
 		"help": {
@@ -54,7 +104,7 @@ func CliCommandMap() map[string]CliCommand {
 	}
 
 }
-func helpCommand(*Config, *pokeapiclient.Client) error {
+func helpCommand(*Config, *pokeapiclient.Client) (CallbackResponse, error) {
 	fmt.Println("Welcome to the Pokedex!")
 	fmt.Println("Usage:")
 	fmt.Println("")
@@ -62,30 +112,31 @@ func helpCommand(*Config, *pokeapiclient.Client) error {
 		fmt.Println(key + ": " + value.Description)
 	}
 	fmt.Println("")
-	return nil
+	return HelpCommandResponse{CliCommandMap()}, nil
 }
-func exitCommand(*Config, *pokeapiclient.Client) error {
-	fmt.Println("Okay! See you next time!")
-	return nil
+func exitCommand(*Config, *pokeapiclient.Client) (CallbackResponse, error) {
+	return ExitCommandResponse{"Okay! See you next time!"}, nil
 }
 
+type Location struct {
+	Name string
+	URL  string
+}
 type GetLocationsResponse struct {
 	Count    int
 	Next     string
 	Previous string
-	Results  []struct {
-		Name string
-		URL  string
-	}
+	Results  []Location
 }
 
-func Map(config *Config, client *pokeapiclient.Client) error {
+func Map(config *Config, client *pokeapiclient.Client) (CallbackResponse, error) {
 	url := "https://pokeapi.co/api/v2/location/"
 	if config.NEXT_URL != nil {
 		fmt.Println("Next URL is not nil")
 		url = *config.NEXT_URL
 	}
-	response, err := http.Get(url)
+	response, err := client.HttpClient.Get(url)
+
 	if err != nil {
 		errors.New("There was an issue with the API request")
 	}
@@ -99,7 +150,6 @@ func Map(config *Config, client *pokeapiclient.Client) error {
 	config.NEXT_URL = &locations.Next
 	config.PREV_URL = &url
 	client.Cache.Add(url, responseBytes)
-	fmt.Println("Next URL: ", *config.NEXT_URL)
 	if marshalingError != nil {
 		log.Fatalf("Failed to unmarshal response: %s\n", marshalingError)
 	}
@@ -107,14 +157,14 @@ func Map(config *Config, client *pokeapiclient.Client) error {
 		fmt.Println(location.Name)
 	}
 
-	return nil
+	return MapCommandResponse{locations.Results}, nil
 }
 
-func Mapb(config *Config, client *pokeapiclient.Client) error {
+func Mapb(config *Config, client *pokeapiclient.Client) ([]Location, error) {
 
 	if config.PREV_URL == nil || *config.PREV_URL == "" {
 		fmt.Println("There are no previous pages")
-		return nil
+		return nil, errors.New("There are no previous pages")
 	}
 
 	url := *config.PREV_URL
@@ -125,38 +175,35 @@ func Mapb(config *Config, client *pokeapiclient.Client) error {
 
 		response, err := client.HttpClient.Get(url)
 		if err != nil {
-			return errors.New("there was an issue with the API request")
+			return nil, errors.New("there was an issue with the API request")
 		}
 		if response == nil {
-			return errors.New("There was an issue with the API response")
+			return nil, errors.New("There was an issue with the API response")
 		}
 		body, _ := io.ReadAll(response.Body)
 		if response.StatusCode > 299 {
 			log.Fatalf("Response failed with status code: %d and\nbody: %s\n", response.StatusCode, body)
 		}
 		responseBytes := []byte(body)
-		locations, _ := UnmarshallAndPrint(responseBytes)
+		locations, _ := Unmarshall(responseBytes)
 		config.NEXT_URL = &locations.Next
 		config.PREV_URL = &locations.Previous
 
-		UnmarshallAndPrint(responseBytes)
+		return locations.Results, nil
 	} else {
 		fmt.Println("Cache Hit")
 
-		UnmarshallAndPrint(cachedBytes)
+		Unmarshall(cachedBytes)
 	}
 
-	return nil
+	return nil, nil
 }
 
-func UnmarshallAndPrint(val []byte) (GetLocationsResponse, error) {
+func Unmarshall(val []byte) (GetLocationsResponse, error) {
 	var locations GetLocationsResponse
 	marshalingError := json.Unmarshal(val, &locations)
 	if marshalingError != nil {
 		log.Fatalf("Failed to unmarshal response: %s\n", marshalingError)
-	}
-	for _, location := range locations.Results {
-		fmt.Println(location.Name)
 	}
 	return locations, nil
 }

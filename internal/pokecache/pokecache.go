@@ -16,6 +16,9 @@ type Cache struct {
 	mu    *sync.Mutex
 }
 
+func (cache Cache) Length() int {
+	return len(cache.cache)
+}
 func NewCache(interval time.Duration) *Cache {
 	c := Cache{
 		cache: make(map[string]CacheEntry),
