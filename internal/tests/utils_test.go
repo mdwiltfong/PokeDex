@@ -47,8 +47,10 @@ func TestMap(t *testing.T) {
 func TestMapb(t *testing.T) {
 	configInput := &utils.Config{}
 	clientInput := pokeapiclient.NewClient(50000, 10000)
-	utils.Map(configInput, &clientInput)
-	utils.Mapb(configInput, &clientInput)
+	response1, _ := utils.Map(configInput, &clientInput)
+	response2, _ := utils.Mapb(configInput, &clientInput)
+	response1.Response()
+	isEqual(&response1, &response2)
 	cacheLength := clientInput.Cache.Length()
 	if cacheLength > 1 {
 		t.Fatalf(`The cache length is %v when it should be 1`, cacheLength)
@@ -63,4 +65,8 @@ func contains(slice []string, value string) bool {
 		}
 	}
 	return false
+}
+
+func isEqual(response1 *utils.CallbackResponse, response2 *utils.CallbackResponse) {
+
 }

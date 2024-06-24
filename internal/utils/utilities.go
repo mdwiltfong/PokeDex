@@ -59,6 +59,7 @@ type MapCommandResponse struct {
 	Locations []Location
 }
 
+// TODO: Another type of interface is needed for Map and Mapb since the response is not a string, but a map
 func (h MapCommandResponse) Response() string {
 	return ""
 }
@@ -161,7 +162,7 @@ func Mapb(config *Config, client *pokeapiclient.Client) (CallbackResponse, error
 
 	if config.PREV_URL == nil || *config.PREV_URL == "" {
 		fmt.Println("There are no previous pages")
-		return MapCommandResponse{}, errors.New("There are no previous pages")
+		return MapCommandResponse{}, errors.New("there are no previous pages")
 	}
 
 	url := *config.PREV_URL
@@ -190,10 +191,10 @@ func Mapb(config *Config, client *pokeapiclient.Client) (CallbackResponse, error
 	} else {
 		fmt.Println("Cache Hit")
 
-		Unmarshall(cachedBytes)
+		locations, _ := Unmarshall(cachedBytes)
+		return MapCommandResponse{locations.Results}, nil
 	}
 
-	return MapCommandResponse{}, nil
 }
 
 func Unmarshall(val []byte) (GetLocationsResponse, error) {
