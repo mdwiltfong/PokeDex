@@ -58,12 +58,17 @@ func (c *Cache) Remove(key string) bool {
 
 func (c *Cache) reapLoop(interval time.Duration) {
 	ticker := time.NewTicker(interval)
-	defer ticker.Stop()
-	for key, value := range c.cache {
-		diff := value.time.Second() - time.Now().Second()
-		if diff > int(interval.Seconds()) {
-			c.Remove(key)
+	for range ticker.C {
+		c.reap(time.Now().UTC(), interval)
+	}
+}
+
+func (c *Cache) reap(now time.Time, last time.Duration) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	for k, v := range c.cache {
+		if v.time.Before(now.Add(-last)) {
+			delete(c.cache, k)
 		}
 	}
-
 }

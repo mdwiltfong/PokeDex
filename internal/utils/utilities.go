@@ -22,7 +22,7 @@ func SanitizeInput(input string) string {
 }
 
 type CallbackResponse interface {
-	Response() string
+	Response() interface{}
 	Print()
 }
 
@@ -30,8 +30,8 @@ type HelpCommandResponse struct {
 	CliCommandMapType
 }
 
-func (h HelpCommandResponse) Response() string {
-	return ""
+func (h HelpCommandResponse) Response() interface{} {
+	return h.CliCommandMapType
 }
 func (h HelpCommandResponse) Print() {
 	fmt.Println("Welcome to the Pokedex!")
@@ -47,7 +47,7 @@ type ExitCommandResponse struct {
 	Message string
 }
 
-func (h ExitCommandResponse) Response() string {
+func (h ExitCommandResponse) Response() interface{} {
 	return h.Message
 }
 
@@ -60,8 +60,8 @@ type MapCommandResponse struct {
 }
 
 // TODO: Another type of interface is needed for Map and Mapb since the response is not a string, but a map
-func (h MapCommandResponse) Response() string {
-	return ""
+func (h MapCommandResponse) Response() interface{} {
+	return h.Locations
 }
 func (h MapCommandResponse) Print() {
 	for _, loc := range h.Locations {
@@ -85,12 +85,12 @@ func CliCommandMap() CliCommandMapType {
 		"help": {
 			Name:        "help",
 			Description: "Displays a help message",
-			Callback:    helpCommand,
+			Callback:    HelpCommand,
 		},
 		"exit": {
 			Name:        "exit",
 			Description: "Exits the REPL",
-			Callback:    exitCommand,
+			Callback:    ExitCommand,
 		},
 		"map": {
 			Name:        "map",
@@ -105,7 +105,7 @@ func CliCommandMap() CliCommandMapType {
 	}
 
 }
-func helpCommand(*Config, *pokeapiclient.Client) (CallbackResponse, error) {
+func HelpCommand(*Config, *pokeapiclient.Client) (CallbackResponse, error) {
 	fmt.Println("Welcome to the Pokedex!")
 	fmt.Println("Usage:")
 	fmt.Println("")
@@ -115,7 +115,7 @@ func helpCommand(*Config, *pokeapiclient.Client) (CallbackResponse, error) {
 	fmt.Println("")
 	return HelpCommandResponse{CliCommandMap()}, nil
 }
-func exitCommand(*Config, *pokeapiclient.Client) (CallbackResponse, error) {
+func ExitCommand(*Config, *pokeapiclient.Client) (CallbackResponse, error) {
 	return ExitCommandResponse{"Okay! See you next time!"}, nil
 }
 
