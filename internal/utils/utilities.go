@@ -16,9 +16,10 @@ type Config struct {
 	NEXT_URL *string
 }
 
-func SanitizeInput(input string) string {
+func SanitizeInput(input string) []string {
 	output := strings.TrimSpace(input)
-	return strings.ToLower(output)
+	strings.ToLower(output)
+	return strings.Split(output, "")
 }
 
 type CallbackResponse interface {
@@ -69,7 +70,7 @@ func (h MapCommandResponse) Print() {
 	}
 }
 
-type CallbackFunction func(*Config, *pokeapiclient.Client) (CallbackResponse, error)
+type CallbackFunction func(*Config, *pokeapiclient.Client, string) (CallbackResponse, error)
 
 type CliCommand struct {
 	Name        string
@@ -105,7 +106,7 @@ func CliCommandMap() CliCommandMapType {
 	}
 
 }
-func HelpCommand(*Config, *pokeapiclient.Client) (CallbackResponse, error) {
+func HelpCommand(*Config, *pokeapiclient.Client, string) (CallbackResponse, error) {
 	fmt.Println("Welcome to the Pokedex!")
 	fmt.Println("Usage:")
 	fmt.Println("")
@@ -115,7 +116,7 @@ func HelpCommand(*Config, *pokeapiclient.Client) (CallbackResponse, error) {
 	fmt.Println("")
 	return HelpCommandResponse{CliCommandMap()}, nil
 }
-func ExitCommand(*Config, *pokeapiclient.Client) (CallbackResponse, error) {
+func ExitCommand(*Config, *pokeapiclient.Client, string) (CallbackResponse, error) {
 	return ExitCommandResponse{"Okay! See you next time!"}, nil
 }
 
@@ -130,7 +131,7 @@ type GetLocationsResponse struct {
 	Results  []Location
 }
 
-func Map(config *Config, client *pokeapiclient.Client) (CallbackResponse, error) {
+func Map(config *Config, client *pokeapiclient.Client, commandInput string) (CallbackResponse, error) {
 	url := "https://pokeapi.co/api/v2/location/"
 	if config.NEXT_URL != nil {
 		fmt.Println("Next URL is not nil")
@@ -158,7 +159,7 @@ func Map(config *Config, client *pokeapiclient.Client) (CallbackResponse, error)
 	return MapCommandResponse{locations.Results}, nil
 }
 
-func Mapb(config *Config, client *pokeapiclient.Client) (CallbackResponse, error) {
+func Mapb(config *Config, client *pokeapiclient.Client, commandInput string) (CallbackResponse, error) {
 
 	if config.PREV_URL == nil || *config.PREV_URL == "" {
 		fmt.Println("There are no previous pages")
@@ -194,6 +195,10 @@ func Mapb(config *Config, client *pokeapiclient.Client) (CallbackResponse, error
 		locations, _ := Unmarshall(cachedBytes)
 		return MapCommandResponse{locations.Results}, nil
 	}
+
+}
+
+func Explore(config *Config, client *pokeapiclient.Client, commandInput string) (CallbackResponse, error) {
 
 }
 

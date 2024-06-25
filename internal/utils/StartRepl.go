@@ -20,9 +20,9 @@ func StartRepl(cfg *Config, client *pokeapiclient.Client) {
 		input := scanner.Text()
 
 		sanitizedInput := SanitizeInput(input)
-		command, exists := cliMap[sanitizedInput]
+		command, exists := cliMap[sanitizedInput[0]]
 		if exists {
-			response, error := command.Callback(cfg, client)
+			response, error := command.Callback(cfg, client, sanitizedInput[1])
 			if error != nil {
 				log.Fatalf(error.Error())
 				return
@@ -31,7 +31,7 @@ func StartRepl(cfg *Config, client *pokeapiclient.Client) {
 		} else {
 			fmt.Println("Hmm, this command doesn't exist. Try again")
 		}
-		if sanitizedInput == "exit" {
+		if sanitizedInput[0] == "exit" {
 			return
 		}
 		fmt.Print("PokeDex > ")
