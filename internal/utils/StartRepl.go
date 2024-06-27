@@ -3,7 +3,6 @@ package utils
 import (
 	"bufio"
 	"fmt"
-	"log"
 	"os"
 
 	"github.com/mdwiltfong/PokeDex/internal/pokeapiclient"
@@ -23,16 +22,14 @@ func StartRepl(cfg *Config, client *pokeapiclient.Client) {
 		command, exists := cliMap[sanitizedInput[0]]
 		if exists {
 			var response CallbackResponse
-			var error error
+			var err error
 			if len(sanitizedInput) == 2 {
-				response, error = command.Callback(cfg, client, sanitizedInput[1])
+				response, err = command.Callback(cfg, client, sanitizedInput[1])
 			} else {
-				response, error = command.Callback(cfg, client, "")
+				response, err = command.Callback(cfg, client, "")
 			}
-
-			if error != nil {
-				log.Fatalf(error.Error())
-				return
+			if err != nil {
+				fmt.Println(err.Error())
 			}
 			response.Print()
 		} else {

@@ -21,7 +21,7 @@ func TestSanitizeInput(t *testing.T) {
 }
 
 func TestCliCommandMap(t *testing.T) {
-	expectedCommands := []string{"help", "exit", "map", "mapb"}
+	expectedCommands := []string{"help", "exit", "map", "mapb", "explore"}
 	outputCommands := utils.CliCommandMap()
 	for key, _ := range outputCommands {
 		output := contains(expectedCommands, key)
@@ -135,6 +135,28 @@ func TestExplore(t *testing.T) {
 	output, _ := utils.Explore(configInput, &clientInput, "canalave-city-area")
 	if output.Response() == nil {
 		t.Fatalf(`Explore returned nil response`)
+	}
+}
+
+func TestExploreError404(t *testing.T) {
+	configInput := &utils.Config{}
+	clientInput := pokeapiclient.NewClient(50000, 10000)
+	output, err := utils.Explore(configInput, &clientInput, "LOL")
+	if output.Response() == nil {
+		t.Fatalf(`Explore returned nil response`)
+	}
+	if err == nil {
+		t.Fatalf("Error object should be nil but was: %s", err.Error())
+	}
+}
+
+func TestExploreErrorNoInput(t *testing.T) {
+	configInput := &utils.Config{}
+	clientInput := pokeapiclient.NewClient(50000, 10000)
+	_, err := utils.Explore(configInput, &clientInput, "")
+
+	if err.Error() != "Please put in a location to explroe" {
+		t.Fatalf("Error object should be nil but was: %s", err.Error())
 	}
 }
 func contains(slice []string, value string) bool {
