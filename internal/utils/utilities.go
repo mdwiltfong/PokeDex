@@ -18,13 +18,25 @@ type Config struct {
 
 func SanitizeInput(input string) []string {
 	output := strings.TrimSpace(input)
-	strings.ToLower(output)
-	return strings.Split(output, "")
+	lowerCase := strings.ToLower(output)
+	return strings.Split(lowerCase, " ")
 }
 
 type CallbackResponse interface {
 	Response() interface{}
 	Print()
+}
+type ExploreCommandResponse struct {
+	Encounters []PokemonEncounter
+}
+
+func (h ExploreCommandResponse) Response() interface{} {
+	return h.Encounters
+}
+func (h ExploreCommandResponse) Print() {
+	for _, encounter := range h.Encounters {
+		fmt.Println(encounter.Pokemon.Name)
+	}
 }
 
 type HelpCommandResponse struct {
@@ -60,7 +72,6 @@ type MapCommandResponse struct {
 	Locations []Location
 }
 
-// TODO: Another type of interface is needed for Map and Mapb since the response is not a string, but a map
 func (h MapCommandResponse) Response() interface{} {
 	return h.Locations
 }
@@ -103,6 +114,11 @@ func CliCommandMap() CliCommandMapType {
 			Description: "Sends a get request of maps in the pokemon game",
 			Callback:    Mapb,
 		},
+		"explore": {
+			Name:        "explore",
+			Description: "Explore the possible pokemon encounters in an area",
+			Callback:    Explore,
+		},
 	}
 
 }
@@ -130,11 +146,63 @@ type GetLocationsResponse struct {
 	Previous string
 	Results  []Location
 }
+type PokemonEncounter struct {
+	Pokemon struct {
+		Name string `json:"name"`
+		URL  string `json:"url"`
+	} `json:"pokemon"`
+	VersionDetails []struct {
+		EncounterDetails []struct {
+			Chance          int   `json:"chance"`
+			ConditionValues []any `json:"condition_values"`
+			MaxLevel        int   `json:"max_level"`
+			Method          struct {
+				Name string `json:"name"`
+				URL  string `json:"url"`
+			} `json:"method"`
+			MinLevel int `json:"min_level"`
+		} `json:"encounter_details"`
+		MaxChance int `json:"max_chance"`
+		Version   struct {
+			Name string `json:"name"`
+			URL  string `json:"url"`
+		} `json:"version"`
+	} `json:"version_details"`
+}
+type PokemonEncountersResponse struct {
+	EncounterMethodRates []struct {
+		EncounterMethod struct {
+			Name string `json:"name"`
+			URL  string `json:"url"`
+		} `json:"encounter_method"`
+		VersionDetails []struct {
+			Rate    int `json:"rate"`
+			Version struct {
+				Name string `json:"name"`
+				URL  string `json:"url"`
+			} `json:"version"`
+		} `json:"version_details"`
+	} `json:"encounter_method_rates"`
+	GameIndex int `json:"game_index"`
+	ID        int `json:"id"`
+	Location  struct {
+		Name string `json:"name"`
+		URL  string `json:"url"`
+	} `json:"location"`
+	Name  string `json:"name"`
+	Names []struct {
+		Language struct {
+			Name string `json:"name"`
+			URL  string `json:"url"`
+		} `json:"language"`
+		Name string `json:"name"`
+	} `json:"names"`
+	PokemonEncounters []PokemonEncounter `json:"pokemon_encounters"`
+}
 
 func Map(config *Config, client *pokeapiclient.Client, commandInput string) (CallbackResponse, error) {
 	url := "https://pokeapi.co/api/v2/location/"
 	if config.NEXT_URL != nil {
-		fmt.Println("Next URL is not nil")
 		url = *config.NEXT_URL
 	}
 	response, err := client.HttpClient.Get(url)
@@ -147,8 +215,8 @@ func Map(config *Config, client *pokeapiclient.Client, commandInput string) (Cal
 		log.Fatalf("Response failed with status code: %d and\nbody: %s\n", response.StatusCode, body)
 	}
 	responseBytes := []byte(body)
-
-	locations, marshalingError := Unmarshall(responseBytes)
+	var locations GetLocationsResponse
+	marshalingError := Unmarshall(responseBytes, &locations)
 
 	config.NEXT_URL = &locations.Next
 	config.PREV_URL = &url
@@ -168,7 +236,7 @@ func Mapb(config *Config, client *pokeapiclient.Client, commandInput string) (Ca
 
 	url := *config.PREV_URL
 	cachedBytes, exists := client.Cache.Get(url)
-
+	var locations GetLocationsResponse
 	if !exists {
 		fmt.Println("No cached data!!!!")
 
@@ -184,7 +252,10 @@ func Mapb(config *Config, client *pokeapiclient.Client, commandInput string) (Ca
 			log.Fatalf("Response failed with status code: %d and\nbody: %s\n", response.StatusCode, body)
 		}
 		responseBytes := []byte(body)
-		locations, _ := Unmarshall(responseBytes)
+		error := Unmarshall(responseBytes, &locations)
+		if error != nil {
+			log.Fatalf("Failed to unmarshal response: %s\n", error)
+		}
 		config.NEXT_URL = &locations.Next
 		config.PREV_URL = &locations.Previous
 
@@ -192,21 +263,43 @@ func Mapb(config *Config, client *pokeapiclient.Client, commandInput string) (Ca
 	} else {
 		fmt.Println("Cache Hit")
 
-		locations, _ := Unmarshall(cachedBytes)
+		error := Unmarshall(cachedBytes, &locations)
+		if error != nil {
+			log.Fatalf("Failed to unmarshal response: %s\n", error)
+		}
 		return MapCommandResponse{locations.Results}, nil
 	}
 
 }
 
 func Explore(config *Config, client *pokeapiclient.Client, commandInput string) (CallbackResponse, error) {
-
+	if commandInput == "" {
+		errors.New("Please put in a location to explroe")
+	}
+	url := fmt.Sprintf("https://pokeapi.co/api/v2/location-area/%s", commandInput)
+	response, err := client.HttpClient.Get(url)
+	if err != nil {
+		errors.New(err.Error())
+	}
+	body, _ := io.ReadAll(response.Body)
+	if response.StatusCode > 299 {
+		log.Fatalf("Response failed with status code: %d and\nbody: %s\n", response.StatusCode, body)
+	}
+	responseBytes := []byte(body)
+	var encounter PokemonEncountersResponse
+	unMarshallError := Unmarshall[PokemonEncountersResponse](responseBytes, &encounter)
+	if unMarshallError != nil {
+		log.Fatalf("Failed to unmarshal response: %s\n", unMarshallError)
+	}
+	return ExploreCommandResponse{encounter.PokemonEncounters}, nil
 }
 
-func Unmarshall(val []byte) (GetLocationsResponse, error) {
-	var locations GetLocationsResponse
-	marshalingError := json.Unmarshal(val, &locations)
-	if marshalingError != nil {
-		log.Fatalf("Failed to unmarshal response: %s\n", marshalingError)
+func Unmarshall[T GetLocationsResponse | PokemonEncountersResponse](val []byte, v *T) error {
+
+	unmarshalError := json.Unmarshal(val, &v)
+	if unmarshalError != nil {
+		log.Fatalf("Failed to unmarshal response: %s\n", unmarshalError)
 	}
-	return locations, nil
+
+	return nil
 }

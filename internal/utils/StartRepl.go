@@ -22,7 +22,14 @@ func StartRepl(cfg *Config, client *pokeapiclient.Client) {
 		sanitizedInput := SanitizeInput(input)
 		command, exists := cliMap[sanitizedInput[0]]
 		if exists {
-			response, error := command.Callback(cfg, client, sanitizedInput[1])
+			var response CallbackResponse
+			var error error
+			if len(sanitizedInput) == 2 {
+				response, error = command.Callback(cfg, client, sanitizedInput[1])
+			} else {
+				response, error = command.Callback(cfg, client, "")
+			}
+
 			if error != nil {
 				log.Fatalf(error.Error())
 				return

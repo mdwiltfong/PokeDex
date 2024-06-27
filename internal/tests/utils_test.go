@@ -11,11 +11,12 @@ import (
 )
 
 func TestSanitizeInput(t *testing.T) {
-	expected := "blah"
-	input := "  BLAH   "
+
+	input := "  COMMAND INPUT   "
 	output := utils.SanitizeInput(input)
-	if output == "" || output != expected {
-		t.Fatalf(`SanitizeInput(%v)=%v, expected %v`, input, output, expected)
+	if output[0] != "command" && output[1] != "input" {
+		t.Fatalf(`Command was: %s but expected Command \n Input was: %s but expected input`, output[0], output[1])
+
 	}
 }
 
@@ -33,7 +34,7 @@ func TestCliCommandMap(t *testing.T) {
 func TestMap(t *testing.T) {
 	configInput := &utils.Config{}
 	clientInput := pokeapiclient.NewClient(50000, 10000)
-	utils.Map(configInput, &clientInput)
+	utils.Map(configInput, &clientInput, "")
 	_, exists := clientInput.Cache.Get("https://pokeapi.co/api/v2/location/")
 	if exists == false {
 		t.Fatalf(`Map did not store the url:%v`, "https://pokeapi.co/api/v2/location/")
@@ -50,8 +51,8 @@ func TestMap(t *testing.T) {
 func TestMapb(t *testing.T) {
 	configInput := &utils.Config{}
 	clientInput := pokeapiclient.NewClient(50000, 10000)
-	output1, _ := utils.Map(configInput, &clientInput)
-	output2, _ := utils.Mapb(configInput, &clientInput)
+	output1, _ := utils.Map(configInput, &clientInput, "")
+	output2, _ := utils.Mapb(configInput, &clientInput, "")
 
 	if isEqual(output1, output2) == false {
 		t.Fatalf(`The two responses are not equal`)
@@ -128,6 +129,14 @@ func TestReapLoop(t *testing.T) {
 	}
 }
 
+func TestExplore(t *testing.T) {
+	configInput := &utils.Config{}
+	clientInput := pokeapiclient.NewClient(50000, 10000)
+	output, _ := utils.Explore(configInput, &clientInput, "canalave-city-area")
+	if output.Response() == nil {
+		t.Fatalf(`Explore returned nil response`)
+	}
+}
 func contains(slice []string, value string) bool {
 	for _, item := range slice {
 		if item == value {
