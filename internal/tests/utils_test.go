@@ -155,7 +155,7 @@ func TestExploreErrorNoInput(t *testing.T) {
 	clientInput := pokeapiclient.NewClient(50000, 10000)
 	_, err := utils.Explore(configInput, &clientInput, "")
 
-	if err.Error() != "Please put in a location to explroe" {
+	if err.Error() != "Please put in a location to explore" {
 		t.Fatalf("Error object should be nil but was: %s", err.Error())
 	}
 }
@@ -166,9 +166,9 @@ func TestExploreCache(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Error object should be nil but was: %s", err.Error())
 	}
-	_, err = utils.Explore(configInput, &clientInput, "canalave-city-area")
-	if err != nil {
-		t.Fatalf("Error object should be nil but was: %s", err.Error())
+	cacheLength := clientInput.Cache.Length()
+	if cacheLength != 1 {
+		t.Fatalf("Cache length should be 1 but was %v", cacheLength)
 	}
 
 }

@@ -274,7 +274,7 @@ func Mapb(config *Config, client *pokeapiclient.Client, commandInput string) (Ca
 
 func Explore(config *Config, client *pokeapiclient.Client, commandInput string) (CallbackResponse, error) {
 	if commandInput == "" {
-		return ExploreCommandResponse{}, errors.New("Please put in a location to explroe")
+		return ExploreCommandResponse{}, errors.New("Please put in a location to explore")
 	}
 	url := fmt.Sprintf("https://pokeapi.co/api/v2/location-area/%s", commandInput)
 	cachedBytes, exists := client.Cache.Get(url)
@@ -291,9 +291,10 @@ func Explore(config *Config, client *pokeapiclient.Client, commandInput string) 
 			return ExploreCommandResponse{}, errors.New("There was an issue retrieving the data")
 		}
 		responseBytes := []byte(body)
-		client.Cache.Add(url, responseBytes)
+
 		var encounter PokemonEncountersResponse
 		unMarshallError := Unmarshall[PokemonEncountersResponse](responseBytes, &encounter)
+		client.Cache.Add(url, responseBytes)
 		if unMarshallError != nil {
 			log.Fatalf("Failed to unmarshal response: %s\n", unMarshallError)
 			return ExploreCommandResponse{}, errors.New("There was an issue unmarshalling the data" + unMarshallError.Error())
