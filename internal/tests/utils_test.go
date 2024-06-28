@@ -159,6 +159,19 @@ func TestExploreErrorNoInput(t *testing.T) {
 		t.Fatalf("Error object should be nil but was: %s", err.Error())
 	}
 }
+func TestExploreCache(t *testing.T) {
+	configInput := &utils.Config{}
+	clientInput := pokeapiclient.NewClient(50000, 10000)
+	_, err := utils.Explore(configInput, &clientInput, "canalave-city-area")
+	if err != nil {
+		t.Fatalf("Error object should be nil but was: %s", err.Error())
+	}
+	_, err = utils.Explore(configInput, &clientInput, "canalave-city-area")
+	if err != nil {
+		t.Fatalf("Error object should be nil but was: %s", err.Error())
+	}
+
+}
 func contains(slice []string, value string) bool {
 	for _, item := range slice {
 		if item == value {

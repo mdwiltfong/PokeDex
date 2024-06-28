@@ -277,25 +277,39 @@ func Explore(config *Config, client *pokeapiclient.Client, commandInput string) 
 		return ExploreCommandResponse{}, errors.New("Please put in a location to explroe")
 	}
 	url := fmt.Sprintf("https://pokeapi.co/api/v2/location-area/%s", commandInput)
-	response, err := client.HttpClient.Get(url)
-	if err != nil {
-		return ExploreCommandResponse{}, errors.New("There was an issue retrieving the data:" + err.Error())
-	}
-	body, _ := io.ReadAll(response.Body)
-	if response.StatusCode > 299 {
-		if response.StatusCode == 404 {
-			return ExploreCommandResponse{}, errors.New("Area was not found")
+	cachedBytes, exists := client.Cache.Get(url)
+	if !exists {
+		response, err := client.HttpClient.Get(url)
+		if err != nil {
+			return ExploreCommandResponse{}, errors.New("There was an issue retrieving the data:" + err.Error())
 		}
-		return ExploreCommandResponse{}, errors.New("There was an issue retrieving the data")
+		body, _ := io.ReadAll(response.Body)
+		if response.StatusCode > 299 {
+			if response.StatusCode == 404 {
+				return ExploreCommandResponse{}, errors.New("Area was not found")
+			}
+			return ExploreCommandResponse{}, errors.New("There was an issue retrieving the data")
+		}
+		responseBytes := []byte(body)
+		client.Cache.Add(url, responseBytes)
+		var encounter PokemonEncountersResponse
+		unMarshallError := Unmarshall[PokemonEncountersResponse](responseBytes, &encounter)
+		if unMarshallError != nil {
+			log.Fatalf("Failed to unmarshal response: %s\n", unMarshallError)
+			return ExploreCommandResponse{}, errors.New("There was an issue unmarshalling the data" + unMarshallError.Error())
+		}
+		return ExploreCommandResponse{encounter.PokemonEncounters}, nil
+	} else {
+		fmt.Println("Cache hit")
+		var encounter PokemonEncountersResponse
+		unMarshallError := Unmarshall[PokemonEncountersResponse](cachedBytes, &encounter)
+		if unMarshallError != nil {
+			log.Fatalf("Failed to unmarshal response: %s\n", unMarshallError)
+			return ExploreCommandResponse{}, errors.New("There was an issue unmarshalling the data" + unMarshallError.Error())
+		}
+		return ExploreCommandResponse{encounter.PokemonEncounters}, nil
 	}
-	responseBytes := []byte(body)
-	var encounter PokemonEncountersResponse
-	unMarshallError := Unmarshall[PokemonEncountersResponse](responseBytes, &encounter)
-	if unMarshallError != nil {
-		log.Fatalf("Failed to unmarshal response: %s\n", unMarshallError)
-		return ExploreCommandResponse{}, errors.New("There was an issue unmarshalling the data" + unMarshallError.Error())
-	}
-	return ExploreCommandResponse{encounter.PokemonEncounters}, nil
+
 }
 
 func Unmarshall[T GetLocationsResponse | PokemonEncountersResponse](val []byte, v *T) error {
