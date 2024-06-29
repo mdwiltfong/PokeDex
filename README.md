@@ -2,4 +2,4 @@
 
 ## How to run the program
 
-First build `main.go` by running `go build main.go`. Then execute the binary by running `./main`
+The repo has a makefile located at its root. You can build the app by running `make build` and then run the binary by running `make run`. You can also test the app through `make test`
