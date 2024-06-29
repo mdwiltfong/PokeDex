@@ -14,6 +14,7 @@ import (
 type Config struct {
 	PREV_URL *string
 	NEXT_URL *string
+	Client   *pokeapiclient.Client
 }
 
 func SanitizeInput(input string) []string {
@@ -81,7 +82,7 @@ func (h MapCommandResponse) Print() {
 	}
 }
 
-type CallbackFunction func(*Config, *pokeapiclient.Client, string) (CallbackResponse, error)
+type CallbackFunction func(*Config, string) (CallbackResponse, error)
 
 type CliCommand struct {
 	Name        string
@@ -122,7 +123,8 @@ func CliCommandMap() CliCommandMapType {
 	}
 
 }
-func HelpCommand(*Config, *pokeapiclient.Client, string) (CallbackResponse, error) {
+
+func HelpCommand(*Config, string) (CallbackResponse, error) {
 	fmt.Println("Welcome to the Pokedex!")
 	fmt.Println("Usage:")
 	fmt.Println("")
@@ -132,7 +134,8 @@ func HelpCommand(*Config, *pokeapiclient.Client, string) (CallbackResponse, erro
 	fmt.Println("")
 	return HelpCommandResponse{CliCommandMap()}, nil
 }
-func ExitCommand(*Config, *pokeapiclient.Client, string) (CallbackResponse, error) {
+
+func ExitCommand(*Config, string) (CallbackResponse, error) {
 	return ExitCommandResponse{"Okay! See you next time!"}, nil
 }
 
@@ -200,12 +203,12 @@ type PokemonEncountersResponse struct {
 	PokemonEncounters []PokemonEncounter `json:"pokemon_encounters"`
 }
 
-func Map(config *Config, client *pokeapiclient.Client, commandInput string) (CallbackResponse, error) {
+func Map(config *Config, commandInput string) (CallbackResponse, error) {
 	url := "https://pokeapi.co/api/v2/location/"
 	if config.NEXT_URL != nil {
 		url = *config.NEXT_URL
 	}
-	response, err := client.HttpClient.Get(url)
+	response, err := config.Client.HttpClient.Get(url)
 
 	if err != nil {
 		errors.New("There was an issue with the API request")
@@ -220,14 +223,14 @@ func Map(config *Config, client *pokeapiclient.Client, commandInput string) (Cal
 
 	config.NEXT_URL = &locations.Next
 	config.PREV_URL = &url
-	client.Cache.Add(url, responseBytes)
+	config.Client.Cache.Add(url, responseBytes)
 	if marshalingError != nil {
 		log.Fatalf("Failed to unmarshal response: %s\n", marshalingError)
 	}
 	return MapCommandResponse{locations.Results}, nil
 }
 
-func Mapb(config *Config, client *pokeapiclient.Client, commandInput string) (CallbackResponse, error) {
+func Mapb(config *Config, commandInput string) (CallbackResponse, error) {
 
 	if config.PREV_URL == nil || *config.PREV_URL == "" {
 		fmt.Println("There are no previous pages")
@@ -235,12 +238,13 @@ func Mapb(config *Config, client *pokeapiclient.Client, commandInput string) (Ca
 	}
 
 	url := *config.PREV_URL
-	cachedBytes, exists := client.Cache.Get(url)
 	var locations GetLocationsResponse
+	cachedBytes, exists := config.Client.Cache.Get(url)
+
 	if !exists {
 		fmt.Println("No cached data!!!!")
 
-		response, err := client.HttpClient.Get(url)
+		response, err := config.Client.HttpClient.Get(url)
 		if err != nil {
 			return MapCommandResponse{}, errors.New("there was an issue with the API request")
 		}
@@ -272,14 +276,14 @@ func Mapb(config *Config, client *pokeapiclient.Client, commandInput string) (Ca
 
 }
 
-func Explore(config *Config, client *pokeapiclient.Client, commandInput string) (CallbackResponse, error) {
+func Explore(config *Config, commandInput string) (CallbackResponse, error) {
 	if commandInput == "" {
 		return ExploreCommandResponse{}, errors.New("Please put in a location to explore")
 	}
 	url := fmt.Sprintf("https://pokeapi.co/api/v2/location-area/%s", commandInput)
-	cachedBytes, exists := client.Cache.Get(url)
+	cachedBytes, exists := config.Client.Cache.Get(url)
 	if !exists {
-		response, err := client.HttpClient.Get(url)
+		response, err := config.Client.HttpClient.Get(url)
 		if err != nil {
 			return ExploreCommandResponse{}, errors.New("There was an issue retrieving the data:" + err.Error())
 		}
@@ -294,7 +298,7 @@ func Explore(config *Config, client *pokeapiclient.Client, commandInput string) 
 
 		var encounter PokemonEncountersResponse
 		unMarshallError := Unmarshall[PokemonEncountersResponse](responseBytes, &encounter)
-		client.Cache.Add(url, responseBytes)
+		config.Client.Cache.Add(url, responseBytes)
 		if unMarshallError != nil {
 			log.Fatalf("Failed to unmarshal response: %s\n", unMarshallError)
 			return ExploreCommandResponse{}, errors.New("There was an issue unmarshalling the data" + unMarshallError.Error())

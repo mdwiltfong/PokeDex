@@ -8,8 +8,13 @@ import (
 	"github.com/mdwiltfong/PokeDex/internal/pokeapiclient"
 )
 
-func StartRepl(cfg *Config, client *pokeapiclient.Client) {
-
+func StartRepl() {
+	client := pokeapiclient.NewClient(50000, 100000)
+	cfg := &Config{
+		PREV_URL: nil,
+		NEXT_URL: nil,
+		Client:   &client,
+	}
 	scanner := bufio.NewScanner(os.Stdin)
 	cliMap := CliCommandMap()
 
@@ -24,9 +29,9 @@ func StartRepl(cfg *Config, client *pokeapiclient.Client) {
 			var response CallbackResponse
 			var err error
 			if len(sanitizedInput) == 2 {
-				response, err = command.Callback(cfg, client, sanitizedInput[1])
+				response, err = command.Callback(cfg, sanitizedInput[1])
 			} else {
-				response, err = command.Callback(cfg, client, "")
+				response, err = command.Callback(cfg, "")
 			}
 			if err != nil {
 				fmt.Println(err.Error())
@@ -39,5 +44,6 @@ func StartRepl(cfg *Config, client *pokeapiclient.Client) {
 			return
 		}
 		fmt.Print("PokeDex > ")
+
 	}
 }

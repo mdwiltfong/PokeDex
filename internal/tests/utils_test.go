@@ -32,9 +32,17 @@ func TestCliCommandMap(t *testing.T) {
 }
 
 func TestMap(t *testing.T) {
-	configInput := &utils.Config{}
 	clientInput := pokeapiclient.NewClient(50000, 10000)
+<<<<<<< HEAD
 	utils.Map(configInput, &clientInput, "")
+=======
+	configInput := &utils.Config{
+		NEXT_URL: nil,
+		PREV_URL: nil,
+		Client:   &clientInput,
+	}
+	utils.Map(configInput)
+>>>>>>> f3841fe (consolidating client into config variable)
 	_, exists := clientInput.Cache.Get("https://pokeapi.co/api/v2/location/")
 	if exists == false {
 		t.Fatalf(`Map did not store the url:%v`, "https://pokeapi.co/api/v2/location/")
@@ -49,16 +57,26 @@ func TestMap(t *testing.T) {
 }
 
 func TestMapb(t *testing.T) {
-	configInput := &utils.Config{}
 	clientInput := pokeapiclient.NewClient(50000, 10000)
+<<<<<<< HEAD
 	output1, _ := utils.Map(configInput, &clientInput, "")
 	output2, _ := utils.Mapb(configInput, &clientInput, "")
+=======
+	configInput := &utils.Config{
+		NEXT_URL: nil,
+		PREV_URL: nil,
+		Client:   &clientInput,
+	}
+
+	output1, _ := utils.Map(configInput)
+	output2, _ := utils.Mapb(configInput)
+>>>>>>> f3841fe (consolidating client into config variable)
 
 	if isEqual(output1, output2) == false {
 		t.Fatalf(`The two responses are not equal`)
 	}
 	cacheLength := clientInput.Cache.Length()
-	if cacheLength > 1 {
+	if cacheLength != 1 {
 		t.Fatalf(`The cache length is %v when it should be 1`, cacheLength)
 	}
 }
