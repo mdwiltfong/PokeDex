@@ -14,6 +14,7 @@ import (
 type Config struct {
 	PREV_URL *string
 	NEXT_URL *string
+	Client   *pokeapiclient.Client
 }
 
 func SanitizeInput(input string) string {
@@ -69,7 +70,7 @@ func (h MapCommandResponse) Print() {
 	}
 }
 
-type CallbackFunction func(*Config, *pokeapiclient.Client) (CallbackResponse, error)
+type CallbackFunction func(*Config) (CallbackResponse, error)
 
 type CliCommand struct {
 	Name        string
@@ -105,7 +106,7 @@ func CliCommandMap() CliCommandMapType {
 	}
 
 }
-func HelpCommand(*Config, *pokeapiclient.Client) (CallbackResponse, error) {
+func HelpCommand(*Config) (CallbackResponse, error) {
 	fmt.Println("Welcome to the Pokedex!")
 	fmt.Println("Usage:")
 	fmt.Println("")
@@ -115,7 +116,7 @@ func HelpCommand(*Config, *pokeapiclient.Client) (CallbackResponse, error) {
 	fmt.Println("")
 	return HelpCommandResponse{CliCommandMap()}, nil
 }
-func ExitCommand(*Config, *pokeapiclient.Client) (CallbackResponse, error) {
+func ExitCommand(*Config) (CallbackResponse, error) {
 	return ExitCommandResponse{"Okay! See you next time!"}, nil
 }
 
@@ -130,13 +131,13 @@ type GetLocationsResponse struct {
 	Results  []Location
 }
 
-func Map(config *Config, client *pokeapiclient.Client) (CallbackResponse, error) {
+func Map(config *Config) (CallbackResponse, error) {
 	url := "https://pokeapi.co/api/v2/location/"
 	if config.NEXT_URL != nil {
 		fmt.Println("Next URL is not nil")
 		url = *config.NEXT_URL
 	}
-	response, err := client.HttpClient.Get(url)
+	response, err := config.Client.HttpClient.Get(url)
 
 	if err != nil {
 		errors.New("There was an issue with the API request")
@@ -151,14 +152,14 @@ func Map(config *Config, client *pokeapiclient.Client) (CallbackResponse, error)
 
 	config.NEXT_URL = &locations.Next
 	config.PREV_URL = &url
-	client.Cache.Add(url, responseBytes)
+	config.Client.Cache.Add(url, responseBytes)
 	if marshalingError != nil {
 		log.Fatalf("Failed to unmarshal response: %s\n", marshalingError)
 	}
 	return MapCommandResponse{locations.Results}, nil
 }
 
-func Mapb(config *Config, client *pokeapiclient.Client) (CallbackResponse, error) {
+func Mapb(config *Config) (CallbackResponse, error) {
 
 	if config.PREV_URL == nil || *config.PREV_URL == "" {
 		fmt.Println("There are no previous pages")
@@ -166,12 +167,12 @@ func Mapb(config *Config, client *pokeapiclient.Client) (CallbackResponse, error
 	}
 
 	url := *config.PREV_URL
-	cachedBytes, exists := client.Cache.Get(url)
+	cachedBytes, exists := config.Client.Cache.Get(url)
 
 	if !exists {
 		fmt.Println("No cached data!!!!")
 
-		response, err := client.HttpClient.Get(url)
+		response, err := config.Client.HttpClient.Get(url)
 		if err != nil {
 			return MapCommandResponse{}, errors.New("there was an issue with the API request")
 		}

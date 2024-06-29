@@ -6,7 +6,11 @@ import (
 )
 
 func main() {
-	cfg := &utils.Config{}
-	client := pokeapiclient.NewClient(50000, 10000)
-	utils.StartRepl(cfg, &client)
+	client := pokeapiclient.NewClient(50000, 100000)
+	cfg := &utils.Config{
+		PREV_URL: nil,
+		NEXT_URL: nil,
+		Client:   &client,
+	}
+	utils.StartRepl(cfg)
 }

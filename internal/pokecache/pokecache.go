@@ -1,6 +1,7 @@
 package pokecache
 
 import (
+	"fmt"
 	"sync"
 	"time"
 )
@@ -15,7 +16,7 @@ type Cache struct {
 	mu    *sync.Mutex
 }
 
-func (cache Cache) Length() int {
+func (cache *Cache) Length() int {
 	return len(cache.cache)
 }
 func NewCache(interval time.Duration) *Cache {
@@ -35,13 +36,15 @@ func (c *Cache) Add(key string, val []byte) {
 		time: time.Now(),
 		val:  val,
 	}
+	fmt.Println("Cache Add: ", c.cache, key, val)
 }
 
 func (c *Cache) Get(key string) ([]byte, bool) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-
-	if value, exists := c.cache[key]; exists {
+	value, exists := c.cache[key]
+	fmt.Println("Cache Get: ", c.cache, key, value, exists)
+	if exists {
 		return value.val, exists
 	}
 	return nil, false
