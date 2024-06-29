@@ -13,7 +13,7 @@ func StartRepl() {
 	cfg := &Config{
 		PREV_URL: nil,
 		NEXT_URL: nil,
-		Client:   &client,
+		Client:   client,
 	}
 	scanner := bufio.NewScanner(os.Stdin)
 	cliMap := CliCommandMap()

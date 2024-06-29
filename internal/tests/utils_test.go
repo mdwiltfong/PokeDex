@@ -39,7 +39,7 @@ func TestMap(t *testing.T) {
 	configInput := &utils.Config{
 		NEXT_URL: nil,
 		PREV_URL: nil,
-		Client:   &clientInput,
+		Client:   clientInput,
 	}
 	utils.Map(configInput)
 >>>>>>> f3841fe (consolidating client into config variable)
@@ -65,7 +65,7 @@ func TestMapb(t *testing.T) {
 	configInput := &utils.Config{
 		NEXT_URL: nil,
 		PREV_URL: nil,
-		Client:   &clientInput,
+		Client:   clientInput,
 	}
 
 	output1, _ := utils.Map(configInput)
