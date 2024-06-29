@@ -60,7 +60,6 @@ type MapCommandResponse struct {
 	Locations []Location
 }
 
-// TODO: Another type of interface is needed for Map and Mapb since the response is not a string, but a map
 func (h MapCommandResponse) Response() interface{} {
 	return h.Locations
 }

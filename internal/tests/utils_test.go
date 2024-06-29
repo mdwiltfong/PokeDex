@@ -35,7 +35,7 @@ func TestMap(t *testing.T) {
 	configInput := &utils.Config{
 		NEXT_URL: nil,
 		PREV_URL: nil,
-		Client:   &clientInput,
+		Client:   clientInput,
 	}
 	utils.Map(configInput)
 	_, exists := clientInput.Cache.Get("https://pokeapi.co/api/v2/location/")
@@ -56,7 +56,7 @@ func TestMapb(t *testing.T) {
 	configInput := &utils.Config{
 		NEXT_URL: nil,
 		PREV_URL: nil,
-		Client:   &clientInput,
+		Client:   clientInput,
 	}
 
 	output1, _ := utils.Map(configInput)

@@ -5,10 +5,17 @@ import (
 	"fmt"
 	"log"
 	"os"
+
+	"github.com/mdwiltfong/PokeDex/internal/pokeapiclient"
 )
 
-func StartRepl(cfg *Config) {
-
+func StartRepl() {
+	client := pokeapiclient.NewClient(50000, 100000)
+	cfg := &Config{
+		PREV_URL: nil,
+		NEXT_URL: nil,
+		Client:   client,
+	}
 	scanner := bufio.NewScanner(os.Stdin)
 	cliMap := CliCommandMap()
 
