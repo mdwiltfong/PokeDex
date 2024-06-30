@@ -240,7 +240,6 @@ func Mapb(config *Config, commandInput string) (CallbackResponse, error) {
 	url := *config.PREV_URL
 	var locations GetLocationsResponse
 	cachedBytes, exists := config.Client.Cache.Get(url)
-
 	if !exists {
 		fmt.Println("No cached data!!!!")
 
@@ -270,6 +269,10 @@ func Mapb(config *Config, commandInput string) (CallbackResponse, error) {
 		error := Unmarshall(cachedBytes, &locations)
 		if error != nil {
 			log.Fatalf("Failed to unmarshal response: %s\n", error)
+		}
+		marshalingError := Unmarshall(cachedBytes, &locations)
+		if marshalingError != nil {
+			log.Fatalf("Failed to unmarshal response: %s\n", marshalingError)
 		}
 		return MapCommandResponse{locations.Results}, nil
 	}

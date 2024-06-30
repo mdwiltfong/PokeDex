@@ -57,11 +57,15 @@ func TestMap(t *testing.T) {
 }
 
 func TestMapb(t *testing.T) {
+<<<<<<< HEAD
 	clientInput := pokeapiclient.NewClient(50000, 10000)
 <<<<<<< HEAD
 	output1, _ := utils.Map(configInput, &clientInput, "")
 	output2, _ := utils.Mapb(configInput, &clientInput, "")
 =======
+=======
+	clientInput := pokeapiclient.NewClient(50000, 5*time.Second)
+>>>>>>> 73d03ff (Extends reap so that there's a higher chance of hitting cache)
 	configInput := &utils.Config{
 		NEXT_URL: nil,
 		PREV_URL: nil,
