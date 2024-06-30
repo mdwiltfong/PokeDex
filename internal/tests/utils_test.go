@@ -11,16 +11,17 @@ import (
 )
 
 func TestSanitizeInput(t *testing.T) {
-	expected := "blah"
-	input := "  BLAH   "
+
+	input := "  COMMAND INPUT   "
 	output := utils.SanitizeInput(input)
-	if output == "" || output != expected {
-		t.Fatalf(`SanitizeInput(%v)=%v, expected %v`, input, output, expected)
+	if output[0] != "command" && output[1] != "input" {
+		t.Fatalf(`Command was: %s but expected Command \n Input was: %s but expected input`, output[0], output[1])
+
 	}
 }
 
 func TestCliCommandMap(t *testing.T) {
-	expectedCommands := []string{"help", "exit", "map", "mapb"}
+	expectedCommands := []string{"help", "exit", "map", "mapb", "explore"}
 	outputCommands := utils.CliCommandMap()
 	for key, _ := range outputCommands {
 		output := contains(expectedCommands, key)
@@ -37,7 +38,9 @@ func TestMap(t *testing.T) {
 		PREV_URL: nil,
 		Client:   clientInput,
 	}
-	utils.Map(configInput)
+
+	utils.Map(configInput, "")
+
 	_, exists := clientInput.Cache.Get("https://pokeapi.co/api/v2/location/")
 	if exists == false {
 		t.Fatalf(`Map did not store the url:%v`, "https://pokeapi.co/api/v2/location/")
@@ -52,15 +55,17 @@ func TestMap(t *testing.T) {
 }
 
 func TestMapb(t *testing.T) {
+
 	clientInput := pokeapiclient.NewClient(50000, 5*time.Second)
+
 	configInput := &utils.Config{
 		NEXT_URL: nil,
 		PREV_URL: nil,
 		Client:   clientInput,
 	}
 
-	output1, _ := utils.Map(configInput)
-	output2, _ := utils.Mapb(configInput)
+	output1, _ := utils.Map(configInput, "")
+	output2, _ := utils.Mapb(configInput, "")
 
 	if isEqual(output1, output2) == false {
 		t.Fatalf(`The two responses are not equal`)
@@ -137,6 +142,65 @@ func TestReapLoop(t *testing.T) {
 	}
 }
 
+func TestExplore(t *testing.T) {
+	clientInput := pokeapiclient.NewClient(50000, 10000)
+	configInput := &utils.Config{
+		NEXT_URL: nil,
+		PREV_URL: nil,
+		Client:   clientInput,
+	}
+	output, _ := utils.Explore(configInput, "canalave-city-area")
+	if output.Response() == nil {
+		t.Fatalf(`Explore returned nil response`)
+	}
+}
+
+func TestExploreError404(t *testing.T) {
+	clientInput := pokeapiclient.NewClient(50000, 10000)
+	configInput := &utils.Config{
+		NEXT_URL: nil,
+		PREV_URL: nil,
+		Client:   clientInput,
+	}
+	output, err := utils.Explore(configInput, "LOL")
+	if output.Response() == nil {
+		t.Fatalf(`Explore returned nil response`)
+	}
+	if err == nil {
+		t.Fatalf("Error object should be nil but was: %s", err.Error())
+	}
+}
+
+func TestExploreErrorNoInput(t *testing.T) {
+	clientInput := pokeapiclient.NewClient(50000, 10000)
+	configInput := &utils.Config{
+		NEXT_URL: nil,
+		PREV_URL: nil,
+		Client:   clientInput,
+	}
+	_, err := utils.Explore(configInput, "")
+
+	if err.Error() != "Please put in a location to explore" {
+		t.Fatalf("Error object should be nil but was: %s", err.Error())
+	}
+}
+func TestExploreCache(t *testing.T) {
+	clientInput := pokeapiclient.NewClient(50000, 10000)
+	configInput := &utils.Config{
+		NEXT_URL: nil,
+		PREV_URL: nil,
+		Client:   clientInput,
+	}
+	_, err := utils.Explore(configInput, "canalave-city-area")
+	if err != nil {
+		t.Fatalf("Error object should be nil but was: %s", err.Error())
+	}
+	cacheLength := clientInput.Cache.Length()
+	if cacheLength != 1 {
+		t.Fatalf("Cache length should be 1 but was %v", cacheLength)
+	}
+
+}
 func contains(slice []string, value string) bool {
 	for _, item := range slice {
 		if item == value {

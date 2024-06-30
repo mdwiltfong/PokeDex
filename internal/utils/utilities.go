@@ -17,14 +17,27 @@ type Config struct {
 	Client   *pokeapiclient.Client
 }
 
-func SanitizeInput(input string) string {
+func SanitizeInput(input string) []string {
 	output := strings.TrimSpace(input)
-	return strings.ToLower(output)
+	lowerCase := strings.ToLower(output)
+	return strings.Split(lowerCase, " ")
 }
 
 type CallbackResponse interface {
 	Response() interface{}
 	Print()
+}
+type ExploreCommandResponse struct {
+	Encounters []PokemonEncounter
+}
+
+func (h ExploreCommandResponse) Response() interface{} {
+	return h.Encounters
+}
+func (h ExploreCommandResponse) Print() {
+	for _, encounter := range h.Encounters {
+		fmt.Println(encounter.Pokemon.Name)
+	}
 }
 
 type HelpCommandResponse struct {
@@ -69,7 +82,7 @@ func (h MapCommandResponse) Print() {
 	}
 }
 
-type CallbackFunction func(*Config) (CallbackResponse, error)
+type CallbackFunction func(*Config, string) (CallbackResponse, error)
 
 type CliCommand struct {
 	Name        string
@@ -102,10 +115,16 @@ func CliCommandMap() CliCommandMapType {
 			Description: "Sends a get request of maps in the pokemon game",
 			Callback:    Mapb,
 		},
+		"explore": {
+			Name:        "explore",
+			Description: "Explore the possible pokemon encounters in an area",
+			Callback:    Explore,
+		},
 	}
 
 }
-func HelpCommand(*Config) (CallbackResponse, error) {
+
+func HelpCommand(*Config, string) (CallbackResponse, error) {
 	fmt.Println("Welcome to the Pokedex!")
 	fmt.Println("Usage:")
 	fmt.Println("")
@@ -115,7 +134,8 @@ func HelpCommand(*Config) (CallbackResponse, error) {
 	fmt.Println("")
 	return HelpCommandResponse{CliCommandMap()}, nil
 }
-func ExitCommand(*Config) (CallbackResponse, error) {
+
+func ExitCommand(*Config, string) (CallbackResponse, error) {
 	return ExitCommandResponse{"Okay! See you next time!"}, nil
 }
 
@@ -129,11 +149,63 @@ type GetLocationsResponse struct {
 	Previous string
 	Results  []Location
 }
+type PokemonEncounter struct {
+	Pokemon struct {
+		Name string `json:"name"`
+		URL  string `json:"url"`
+	} `json:"pokemon"`
+	VersionDetails []struct {
+		EncounterDetails []struct {
+			Chance          int   `json:"chance"`
+			ConditionValues []any `json:"condition_values"`
+			MaxLevel        int   `json:"max_level"`
+			Method          struct {
+				Name string `json:"name"`
+				URL  string `json:"url"`
+			} `json:"method"`
+			MinLevel int `json:"min_level"`
+		} `json:"encounter_details"`
+		MaxChance int `json:"max_chance"`
+		Version   struct {
+			Name string `json:"name"`
+			URL  string `json:"url"`
+		} `json:"version"`
+	} `json:"version_details"`
+}
+type PokemonEncountersResponse struct {
+	EncounterMethodRates []struct {
+		EncounterMethod struct {
+			Name string `json:"name"`
+			URL  string `json:"url"`
+		} `json:"encounter_method"`
+		VersionDetails []struct {
+			Rate    int `json:"rate"`
+			Version struct {
+				Name string `json:"name"`
+				URL  string `json:"url"`
+			} `json:"version"`
+		} `json:"version_details"`
+	} `json:"encounter_method_rates"`
+	GameIndex int `json:"game_index"`
+	ID        int `json:"id"`
+	Location  struct {
+		Name string `json:"name"`
+		URL  string `json:"url"`
+	} `json:"location"`
+	Name  string `json:"name"`
+	Names []struct {
+		Language struct {
+			Name string `json:"name"`
+			URL  string `json:"url"`
+		} `json:"language"`
+		Name string `json:"name"`
+	} `json:"names"`
+	PokemonEncounters []PokemonEncounter `json:"pokemon_encounters"`
+}
 
-func Map(config *Config) (CallbackResponse, error) {
+func Map(config *Config, commandInput string) (CallbackResponse, error) {
 	url := "https://pokeapi.co/api/v2/location/"
 	if config.NEXT_URL != nil {
-		fmt.Println("Next URL is not nil")
 		url = *config.NEXT_URL
 	}
 	response, err := config.Client.HttpClient.Get(url)
@@ -146,8 +218,8 @@ func Map(config *Config) (CallbackResponse, error) {
 		log.Fatalf("Response failed with status code: %d and\nbody: %s\n", response.StatusCode, body)
 	}
 	responseBytes := []byte(body)
-
-	locations, marshalingError := Unmarshall(responseBytes)
+	var locations GetLocationsResponse
+	marshalingError := Unmarshall(responseBytes, &locations)
 
 	config.NEXT_URL = &locations.Next
 	config.PREV_URL = &url
@@ -158,7 +230,7 @@ func Map(config *Config) (CallbackResponse, error) {
 	return MapCommandResponse{locations.Results}, nil
 }
 
-func Mapb(config *Config) (CallbackResponse, error) {
+func Mapb(config *Config, commandInput string) (CallbackResponse, error) {
 
 	if config.PREV_URL == nil || *config.PREV_URL == "" {
 		fmt.Println("There are no previous pages")
@@ -166,6 +238,7 @@ func Mapb(config *Config) (CallbackResponse, error) {
 	}
 
 	url := *config.PREV_URL
+	var locations GetLocationsResponse
 	cachedBytes, exists := config.Client.Cache.Get(url)
 	if !exists {
 		fmt.Println("No cached data!!!!")
@@ -182,23 +255,73 @@ func Mapb(config *Config) (CallbackResponse, error) {
 			log.Fatalf("Response failed with status code: %d and\nbody: %s\n", response.StatusCode, body)
 		}
 		responseBytes := []byte(body)
-		locations, _ := Unmarshall(responseBytes)
+		error := Unmarshall(responseBytes, &locations)
+		if error != nil {
+			log.Fatalf("Failed to unmarshal response: %s\n", error)
+		}
 		config.NEXT_URL = &locations.Next
 		config.PREV_URL = &locations.Previous
 
 		return MapCommandResponse{locations.Results}, nil
 	} else {
-		locations, _ := Unmarshall(cachedBytes)
+		fmt.Println("Cache Hit")
+
+		marshalingError := Unmarshall(cachedBytes, &locations)
+		if marshalingError != nil {
+			log.Fatalf("Failed to unmarshal response: %s\n", marshalingError)
+		}
 		return MapCommandResponse{locations.Results}, nil
 	}
 
 }
 
-func Unmarshall(val []byte) (GetLocationsResponse, error) {
-	var locations GetLocationsResponse
-	marshalingError := json.Unmarshal(val, &locations)
-	if marshalingError != nil {
-		log.Fatalf("Failed to unmarshal response: %s\n", marshalingError)
+func Explore(config *Config, commandInput string) (CallbackResponse, error) {
+	if commandInput == "" {
+		return ExploreCommandResponse{}, errors.New("Please put in a location to explore")
 	}
-	return locations, nil
+	url := fmt.Sprintf("https://pokeapi.co/api/v2/location-area/%s", commandInput)
+	cachedBytes, exists := config.Client.Cache.Get(url)
+	if !exists {
+		response, err := config.Client.HttpClient.Get(url)
+		if err != nil {
+			return ExploreCommandResponse{}, errors.New("There was an issue retrieving the data:" + err.Error())
+		}
+		body, _ := io.ReadAll(response.Body)
+		if response.StatusCode > 299 {
+			if response.StatusCode == 404 {
+				return ExploreCommandResponse{}, errors.New("Area was not found")
+			}
+			return ExploreCommandResponse{}, errors.New("There was an issue retrieving the data")
+		}
+		responseBytes := []byte(body)
+
+		var encounter PokemonEncountersResponse
+		unMarshallError := Unmarshall[PokemonEncountersResponse](responseBytes, &encounter)
+		config.Client.Cache.Add(url, responseBytes)
+		if unMarshallError != nil {
+			log.Fatalf("Failed to unmarshal response: %s\n", unMarshallError)
+			return ExploreCommandResponse{}, errors.New("There was an issue unmarshalling the data" + unMarshallError.Error())
+		}
+		return ExploreCommandResponse{encounter.PokemonEncounters}, nil
+	} else {
+		fmt.Println("Cache hit")
+		var encounter PokemonEncountersResponse
+		unMarshallError := Unmarshall[PokemonEncountersResponse](cachedBytes, &encounter)
+		if unMarshallError != nil {
+			log.Fatalf("Failed to unmarshal response: %s\n", unMarshallError)
+			return ExploreCommandResponse{}, errors.New("There was an issue unmarshalling the data" + unMarshallError.Error())
+		}
+		return ExploreCommandResponse{encounter.PokemonEncounters}, nil
+	}
+
+}
+
+func Unmarshall[T GetLocationsResponse | PokemonEncountersResponse](val []byte, v *T) error {
+
+	unmarshalError := json.Unmarshal(val, &v)
+	if unmarshalError != nil {
+		log.Fatalf("Failed to unmarshal response: %s\n", unmarshalError)
+	}
+
+	return nil
 }

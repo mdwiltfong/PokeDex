@@ -3,7 +3,6 @@ package utils
 import (
 	"bufio"
 	"fmt"
-	"log"
 	"os"
 	"time"
 
@@ -26,20 +25,26 @@ func StartRepl() {
 		input := scanner.Text()
 
 		sanitizedInput := SanitizeInput(input)
-		command, exists := cliMap[sanitizedInput]
+		command, exists := cliMap[sanitizedInput[0]]
 		if exists {
-			response, error := command.Callback(cfg)
-			if error != nil {
-				log.Fatalf(error.Error())
-				return
+			var response CallbackResponse
+			var err error
+			if len(sanitizedInput) == 2 {
+				response, err = command.Callback(cfg, sanitizedInput[1])
+			} else {
+				response, err = command.Callback(cfg, "")
+			}
+			if err != nil {
+				fmt.Println(err.Error())
 			}
 			response.Print()
 		} else {
 			fmt.Println("Hmm, this command doesn't exist. Try again")
 		}
-		if sanitizedInput == "exit" {
+		if sanitizedInput[0] == "exit" {
 			return
 		}
 		fmt.Print("PokeDex > ")
+
 	}
 }
