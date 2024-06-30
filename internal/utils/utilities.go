@@ -167,7 +167,6 @@ func Mapb(config *Config) (CallbackResponse, error) {
 
 	url := *config.PREV_URL
 	cachedBytes, exists := config.Client.Cache.Get(url)
-
 	if !exists {
 		fmt.Println("No cached data!!!!")
 
@@ -189,8 +188,6 @@ func Mapb(config *Config) (CallbackResponse, error) {
 
 		return MapCommandResponse{locations.Results}, nil
 	} else {
-		fmt.Println("Cache Hit")
-
 		locations, _ := Unmarshall(cachedBytes)
 		return MapCommandResponse{locations.Results}, nil
 	}

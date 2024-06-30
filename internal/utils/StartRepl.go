@@ -5,12 +5,13 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"github.com/mdwiltfong/PokeDex/internal/pokeapiclient"
 )
 
 func StartRepl() {
-	client := pokeapiclient.NewClient(50000, 100000)
+	client := pokeapiclient.NewClient(50000, 5*time.Second)
 	cfg := &Config{
 		PREV_URL: nil,
 		NEXT_URL: nil,

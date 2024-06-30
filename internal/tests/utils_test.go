@@ -52,7 +52,7 @@ func TestMap(t *testing.T) {
 }
 
 func TestMapb(t *testing.T) {
-	clientInput := pokeapiclient.NewClient(50000, 10000)
+	clientInput := pokeapiclient.NewClient(50000, 5*time.Second)
 	configInput := &utils.Config{
 		NEXT_URL: nil,
 		PREV_URL: nil,
