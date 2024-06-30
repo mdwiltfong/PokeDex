@@ -266,10 +266,6 @@ func Mapb(config *Config, commandInput string) (CallbackResponse, error) {
 	} else {
 		fmt.Println("Cache Hit")
 
-		error := Unmarshall(cachedBytes, &locations)
-		if error != nil {
-			log.Fatalf("Failed to unmarshal response: %s\n", error)
-		}
 		marshalingError := Unmarshall(cachedBytes, &locations)
 		if marshalingError != nil {
 			log.Fatalf("Failed to unmarshal response: %s\n", marshalingError)
