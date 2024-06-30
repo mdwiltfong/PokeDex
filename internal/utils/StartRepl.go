@@ -5,12 +5,18 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"github.com/mdwiltfong/PokeDex/internal/pokeapiclient"
 )
 
-func StartRepl(cfg *Config, client *pokeapiclient.Client) {
-
+func StartRepl() {
+	client := pokeapiclient.NewClient(50000, 5*time.Second)
+	cfg := &Config{
+		PREV_URL: nil,
+		NEXT_URL: nil,
+		Client:   client,
+	}
 	scanner := bufio.NewScanner(os.Stdin)
 	cliMap := CliCommandMap()
 
@@ -22,7 +28,7 @@ func StartRepl(cfg *Config, client *pokeapiclient.Client) {
 		sanitizedInput := SanitizeInput(input)
 		command, exists := cliMap[sanitizedInput]
 		if exists {
-			response, error := command.Callback(cfg, client)
+			response, error := command.Callback(cfg)
 			if error != nil {
 				log.Fatalf(error.Error())
 				return

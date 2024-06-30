@@ -1,12 +1,12 @@
 package main
 
 import (
-	"github.com/mdwiltfong/PokeDex/internal/pokeapiclient"
+	"fmt"
+
 	"github.com/mdwiltfong/PokeDex/internal/utils"
 )
 
 func main() {
-	cfg := &utils.Config{}
-	client := pokeapiclient.NewClient(50000, 10000)
-	utils.StartRepl(cfg, &client)
+	fmt.Println("Main.go")
+	utils.StartRepl()
 }
