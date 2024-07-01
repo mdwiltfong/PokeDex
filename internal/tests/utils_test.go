@@ -21,7 +21,7 @@ func TestSanitizeInput(t *testing.T) {
 }
 
 func TestCliCommandMap(t *testing.T) {
-	expectedCommands := []string{"help", "exit", "map", "mapb", "explore"}
+	expectedCommands := []string{"help", "exit", "map", "mapb", "explore", "catch"}
 	outputCommands := utils.CliCommandMap()
 	for key, _ := range outputCommands {
 		output := contains(expectedCommands, key)
@@ -198,6 +198,27 @@ func TestExploreCache(t *testing.T) {
 	cacheLength := clientInput.Cache.Length()
 	if cacheLength != 1 {
 		t.Fatalf("Cache length should be 1 but was %v", cacheLength)
+	}
+
+}
+
+func TestCatchCommand(t *testing.T) {
+	clientInput := pokeapiclient.NewClient(50000, 10000)
+	configInput := &utils.Config{
+		NEXT_URL: nil,
+		PREV_URL: nil,
+		Client:   clientInput,
+		Pokedex:  utils.Pokedex{},
+	}
+	output, _ := utils.Catch(configInput, "pikachu")
+
+	if output.Response() == nil {
+		t.Fatalf(`CatchCommand returned nil response`)
+	}
+
+	_, err := configInput.Pokedex.GetPokemon("pikachu")
+	if err != nil {
+		t.Fatalf(`Pokedex did not store pikachu`)
 	}
 
 }

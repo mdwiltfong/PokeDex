@@ -15,6 +15,7 @@ func StartRepl() {
 		PREV_URL: nil,
 		NEXT_URL: nil,
 		Client:   client,
+		Pokedex:  Pokedex{},
 	}
 	scanner := bufio.NewScanner(os.Stdin)
 	cliMap := CliCommandMap()
