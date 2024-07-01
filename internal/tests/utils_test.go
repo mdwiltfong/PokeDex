@@ -7,6 +7,7 @@ import (
 
 	"github.com/mdwiltfong/PokeDex/internal/pokeapiclient"
 	"github.com/mdwiltfong/PokeDex/internal/pokecache"
+	"github.com/mdwiltfong/PokeDex/internal/types"
 	"github.com/mdwiltfong/PokeDex/internal/utils"
 )
 
@@ -33,7 +34,7 @@ func TestCliCommandMap(t *testing.T) {
 
 func TestMap(t *testing.T) {
 	clientInput := pokeapiclient.NewClient(50000, 10000)
-	configInput := &utils.Config{
+	configInput := &types.Config{
 		NEXT_URL: nil,
 		PREV_URL: nil,
 		Client:   clientInput,
@@ -58,7 +59,7 @@ func TestMapb(t *testing.T) {
 
 	clientInput := pokeapiclient.NewClient(50000, 5*time.Second)
 
-	configInput := &utils.Config{
+	configInput := &types.Config{
 		NEXT_URL: nil,
 		PREV_URL: nil,
 		Client:   clientInput,
@@ -144,7 +145,7 @@ func TestReapLoop(t *testing.T) {
 
 func TestExplore(t *testing.T) {
 	clientInput := pokeapiclient.NewClient(50000, 10000)
-	configInput := &utils.Config{
+	configInput := &types.Config{
 		NEXT_URL: nil,
 		PREV_URL: nil,
 		Client:   clientInput,
@@ -157,7 +158,7 @@ func TestExplore(t *testing.T) {
 
 func TestExploreError404(t *testing.T) {
 	clientInput := pokeapiclient.NewClient(50000, 10000)
-	configInput := &utils.Config{
+	configInput := &types.Config{
 		NEXT_URL: nil,
 		PREV_URL: nil,
 		Client:   clientInput,
@@ -173,7 +174,7 @@ func TestExploreError404(t *testing.T) {
 
 func TestExploreErrorNoInput(t *testing.T) {
 	clientInput := pokeapiclient.NewClient(50000, 10000)
-	configInput := &utils.Config{
+	configInput := &types.Config{
 		NEXT_URL: nil,
 		PREV_URL: nil,
 		Client:   clientInput,
@@ -186,7 +187,7 @@ func TestExploreErrorNoInput(t *testing.T) {
 }
 func TestExploreCache(t *testing.T) {
 	clientInput := pokeapiclient.NewClient(50000, 10000)
-	configInput := &utils.Config{
+	configInput := &types.Config{
 		NEXT_URL: nil,
 		PREV_URL: nil,
 		Client:   clientInput,
@@ -204,11 +205,11 @@ func TestExploreCache(t *testing.T) {
 
 func TestCatchCommand(t *testing.T) {
 	clientInput := pokeapiclient.NewClient(50000, 10000)
-	configInput := &utils.Config{
+	configInput := &types.Config{
 		NEXT_URL: nil,
 		PREV_URL: nil,
 		Client:   clientInput,
-		Pokedex:  utils.Pokedex{},
+		Pokedex:  types.Pokedex{},
 	}
 	output, _ := utils.Catch(configInput, "pikachu")
 
@@ -231,9 +232,9 @@ func contains(slice []string, value string) bool {
 	return false
 }
 
-func isEqual(output1 utils.CallbackResponse, output2 utils.CallbackResponse) bool {
-	locations1 := output1.Response().([]utils.Location)
-	locations2 := output2.Response().([]utils.Location)
+func isEqual(output1 types.CallbackResponse, output2 types.CallbackResponse) bool {
+	locations1 := output1.Response().([]types.Location)
+	locations2 := output2.Response().([]types.Location)
 	for i, _ := range locations1 {
 		if locations1[i].Name != locations2[i].Name {
 			return false

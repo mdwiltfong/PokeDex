@@ -7,15 +7,16 @@ import (
 	"time"
 
 	"github.com/mdwiltfong/PokeDex/internal/pokeapiclient"
+	"github.com/mdwiltfong/PokeDex/internal/types"
 )
 
 func StartRepl() {
 	client := pokeapiclient.NewClient(50000, 5*time.Second)
-	cfg := &Config{
+	cfg := &types.Config{
 		PREV_URL: nil,
 		NEXT_URL: nil,
 		Client:   client,
-		Pokedex:  Pokedex{},
+		Pokedex:  types.Pokedex{},
 	}
 	scanner := bufio.NewScanner(os.Stdin)
 	cliMap := CliCommandMap()
@@ -28,7 +29,7 @@ func StartRepl() {
 		sanitizedInput := SanitizeInput(input)
 		command, exists := cliMap[sanitizedInput[0]]
 		if exists {
-			var response CallbackResponse
+			var response types.CallbackResponse
 			var err error
 			if len(sanitizedInput) == 2 {
 				response, err = command.Callback(cfg, sanitizedInput[1])
