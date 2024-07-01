@@ -63,11 +63,11 @@ func HelpCommand(*types.Config, string) (types.CallbackResponse, error) {
 		fmt.Println(key + ": " + value.Description)
 	}
 	fmt.Println("")
-	return types.HelpCommandResponse{CliCommandMap()}, nil
+	return types.HelpCommandResponse{CliCommandMapType: CliCommandMap()}, nil
 }
 
 func ExitCommand(*types.Config, string) (types.CallbackResponse, error) {
-	return types.ExitCommandResponse{"Okay! See you next time!"}, nil
+	return types.ExitCommandResponse{Message: "Okay! See you next time!"}, nil
 }
 
 type PokemonEncounter struct {
@@ -118,7 +118,7 @@ func Map(config *types.Config, commandInput string) (types.CallbackResponse, err
 	if marshalingError != nil {
 		log.Fatalf("Failed to unmarshal response: %s\n", marshalingError)
 	}
-	return types.MapCommandResponse{locations.Results}, nil
+	return types.MapCommandResponse{Locations: locations.Results}, nil
 }
 
 func Mapb(config *types.Config, commandInput string) (types.CallbackResponse, error) {
@@ -153,7 +153,7 @@ func Mapb(config *types.Config, commandInput string) (types.CallbackResponse, er
 		config.NEXT_URL = &locations.Next
 		config.PREV_URL = &locations.Previous
 
-		return types.MapCommandResponse{locations.Results}, nil
+		return types.MapCommandResponse{Locations: locations.Results}, nil
 	} else {
 		fmt.Println("Cache Hit")
 
@@ -193,7 +193,7 @@ func Explore(config *types.Config, commandInput string) (types.CallbackResponse,
 			log.Fatalf("Failed to unmarshal response: %s\n", unMarshallError)
 			return types.ExploreCommandResponse{}, errors.New("There was an issue unmarshalling the data" + unMarshallError.Error())
 		}
-		return types.ExploreCommandResponse{encounter.PokemonEncounters}, nil
+		return types.ExploreCommandResponse{Encounters: encounter.PokemonEncounters}, nil
 	} else {
 		fmt.Println("Cache hit")
 		var encounter types.PokemonEncountersResponse
@@ -202,7 +202,7 @@ func Explore(config *types.Config, commandInput string) (types.CallbackResponse,
 			log.Fatalf("Failed to unmarshal response: %s\n", unMarshallError)
 			return types.ExploreCommandResponse{}, errors.New("There was an issue unmarshalling the data" + unMarshallError.Error())
 		}
-		return types.ExploreCommandResponse{encounter.PokemonEncounters}, nil
+		return types.ExploreCommandResponse{Encounters: encounter.PokemonEncounters}, nil
 	}
 
 }
@@ -254,7 +254,7 @@ func Catch(config *types.Config, commandInput string) (types.CallbackResponse, e
 		pokemonInformation.Caught = false
 	}
 
-	return types.PokemonInformationResponse{pokemonInformation}, nil
+	return types.PokemonInformationResponse{Information: pokemonInformation}, nil
 }
 
 func Unmarshall[T types.GetLocationsResponse | types.PokemonEncountersResponse | types.PokemonInformation](val []byte, v *T) error {
