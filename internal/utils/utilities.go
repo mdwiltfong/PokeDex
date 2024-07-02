@@ -50,6 +50,11 @@ func CliCommandMap() types.CliCommandMapType {
 			Description: "Catch a pokemon",
 			Callback:    Catch,
 		},
+		"inspect": {
+			Name:        "inspect",
+			Description: "Inspect a pokemon in the pokedex",
+			Callback:    Inspect,
+		},
 	}
 
 }
@@ -221,7 +226,6 @@ func Catch(config *types.Config, dependency types.Dependency, commandInput strin
 	}
 	randNum := dependency.RandInt(pokemonInformation.BaseExperience)
 	chance := float64(randNum) / float64(pokemonInformation.BaseExperience)
-	fmt.Printf("Chance of catching %s: %f\n", pokemonInformation.Name, chance)
 	if chance > 0.5 {
 		pokemonInformation.Caught = true
 		config.Pokedex.AddPokemon(pokemonInformation)
@@ -232,6 +236,16 @@ func Catch(config *types.Config, dependency types.Dependency, commandInput strin
 	return types.PokemonInformationResponse{Information: pokemonInformation}, nil
 }
 
+func Inspect(config *types.Config, dependency types.Dependency, commandInput string) (types.CallbackResponse, error) {
+	if commandInput == "" {
+		return types.InspectCommandResponse{}, errors.New("Please enter a pokemon you'd like to inspect")
+	}
+	pokemon, err := config.Pokedex.GetPokemon(commandInput)
+	if err != nil {
+		return types.InspectCommandResponse{}, err
+	}
+	return types.InspectCommandResponse{Pokemon: pokemon}, nil
+}
 func Unmarshall[T types.GetLocationsResponse | types.PokemonEncountersResponse | types.PokemonInformation](val []byte, v *T) error {
 
 	unmarshalError := json.Unmarshal(val, &v)

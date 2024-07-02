@@ -87,6 +87,32 @@ type CallbackResponse interface {
 	Response() interface{}
 	Print()
 }
+
+type InspectCommandResponse struct {
+	Pokemon PokemonInformation
+}
+
+func (h InspectCommandResponse) Response() interface{} {
+	return h.Pokemon
+}
+func (h InspectCommandResponse) Print() {
+	if h.Pokemon.Caught {
+		fmt.Printf("Name: %s\n", h.Pokemon.Name)
+		fmt.Printf("Height: %d\n", h.Pokemon.Height)
+		fmt.Printf("Weight: %d\n", h.Pokemon.Weight)
+		fmt.Println("Stats:")
+		for _, stat := range h.Pokemon.Stats {
+			fmt.Printf("%s: %v\n", stat.Stat.Name, stat.BaseStat)
+		}
+		fmt.Println("Types:")
+		for _, state := range h.Pokemon.Types {
+			fmt.Printf("- %s\n", state.Type.Name)
+		}
+	} else {
+		fmt.Println("You haven't caught this pokemon yet!")
+	}
+}
+
 type ExploreCommandResponse struct {
 	Encounters []PokemonEncounter
 }
