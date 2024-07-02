@@ -113,6 +113,20 @@ func (h InspectCommandResponse) Print() {
 	}
 }
 
+type PokedexCommandResponse struct {
+	Pokedex Pokedex
+}
+
+func (h PokedexCommandResponse) Response() interface{} {
+	return h.Pokedex
+}
+func (h PokedexCommandResponse) Print() {
+	fmt.Println("Your Pokedex:")
+	for key := range h.Pokedex {
+		fmt.Printf(" - %s\n", key)
+	}
+}
+
 type ExploreCommandResponse struct {
 	Encounters []PokemonEncounter
 }
@@ -137,6 +151,7 @@ func (h PokemonInformationResponse) Print() {
 	fmt.Printf("Throwing a Pokeball at %s\n", h.Information.Name)
 	if h.Information.Caught {
 		fmt.Printf("You caught %s!\n", h.Information.Name)
+		fmt.Println("You may now inspect it with the inspect command.")
 	} else {
 		fmt.Printf("Oh no! %s got away!\n", h.Information.Name)
 	}
