@@ -7,8 +7,27 @@ import (
 
 	"github.com/mdwiltfong/PokeDex/internal/pokeapiclient"
 	"github.com/mdwiltfong/PokeDex/internal/pokecache"
+	"github.com/mdwiltfong/PokeDex/internal/types"
 	"github.com/mdwiltfong/PokeDex/internal/utils"
 )
+
+type StdDependency struct{}
+
+func (s StdDependency) RandInt(baseExperience int) int {
+	return 1
+}
+
+type FailDependency struct{}
+
+func (s FailDependency) RandInt(baseExperience int) int {
+	return 0
+}
+
+type PassDependency struct{}
+
+func (s PassDependency) RandInt(baseExperience int) int {
+	return 100
+}
 
 func TestSanitizeInput(t *testing.T) {
 
@@ -21,7 +40,7 @@ func TestSanitizeInput(t *testing.T) {
 }
 
 func TestCliCommandMap(t *testing.T) {
-	expectedCommands := []string{"help", "exit", "map", "mapb", "explore", "catch"}
+	expectedCommands := []string{"help", "exit", "map", "mapb", "explore", "catch", "inspect"}
 	outputCommands := utils.CliCommandMap()
 	for key, _ := range outputCommands {
 		output := contains(expectedCommands, key)
@@ -33,13 +52,13 @@ func TestCliCommandMap(t *testing.T) {
 
 func TestMap(t *testing.T) {
 	clientInput := pokeapiclient.NewClient(50000, 10000)
-	configInput := &utils.Config{
+	configInput := &types.Config{
 		NEXT_URL: nil,
 		PREV_URL: nil,
 		Client:   clientInput,
 	}
 
-	utils.Map(configInput, "")
+	utils.Map(configInput, StdDependency{}, "")
 
 	_, exists := clientInput.Cache.Get("https://pokeapi.co/api/v2/location/")
 	if exists == false {
@@ -58,14 +77,14 @@ func TestMapb(t *testing.T) {
 
 	clientInput := pokeapiclient.NewClient(50000, 5*time.Second)
 
-	configInput := &utils.Config{
+	configInput := &types.Config{
 		NEXT_URL: nil,
 		PREV_URL: nil,
 		Client:   clientInput,
 	}
 
-	output1, _ := utils.Map(configInput, "")
-	output2, _ := utils.Mapb(configInput, "")
+	output1, _ := utils.Map(configInput, StdDependency{}, "")
+	output2, _ := utils.Mapb(configInput, StdDependency{}, "")
 
 	if isEqual(output1, output2) == false {
 		t.Fatalf(`The two responses are not equal`)
@@ -144,12 +163,12 @@ func TestReapLoop(t *testing.T) {
 
 func TestExplore(t *testing.T) {
 	clientInput := pokeapiclient.NewClient(50000, 10000)
-	configInput := &utils.Config{
+	configInput := &types.Config{
 		NEXT_URL: nil,
 		PREV_URL: nil,
 		Client:   clientInput,
 	}
-	output, _ := utils.Explore(configInput, "canalave-city-area")
+	output, _ := utils.Explore(configInput, StdDependency{}, "canalave-city-area")
 	if output.Response() == nil {
 		t.Fatalf(`Explore returned nil response`)
 	}
@@ -157,12 +176,12 @@ func TestExplore(t *testing.T) {
 
 func TestExploreError404(t *testing.T) {
 	clientInput := pokeapiclient.NewClient(50000, 10000)
-	configInput := &utils.Config{
+	configInput := &types.Config{
 		NEXT_URL: nil,
 		PREV_URL: nil,
 		Client:   clientInput,
 	}
-	output, err := utils.Explore(configInput, "LOL")
+	output, err := utils.Explore(configInput, StdDependency{}, "LOL")
 	if output.Response() == nil {
 		t.Fatalf(`Explore returned nil response`)
 	}
@@ -173,12 +192,12 @@ func TestExploreError404(t *testing.T) {
 
 func TestExploreErrorNoInput(t *testing.T) {
 	clientInput := pokeapiclient.NewClient(50000, 10000)
-	configInput := &utils.Config{
+	configInput := &types.Config{
 		NEXT_URL: nil,
 		PREV_URL: nil,
 		Client:   clientInput,
 	}
-	_, err := utils.Explore(configInput, "")
+	_, err := utils.Explore(configInput, StdDependency{}, "")
 
 	if err.Error() != "Please put in a location to explore" {
 		t.Fatalf("Error object should be nil but was: %s", err.Error())
@@ -186,12 +205,12 @@ func TestExploreErrorNoInput(t *testing.T) {
 }
 func TestExploreCache(t *testing.T) {
 	clientInput := pokeapiclient.NewClient(50000, 10000)
-	configInput := &utils.Config{
+	configInput := &types.Config{
 		NEXT_URL: nil,
 		PREV_URL: nil,
 		Client:   clientInput,
 	}
-	_, err := utils.Explore(configInput, "canalave-city-area")
+	_, err := utils.Explore(configInput, StdDependency{}, "canalave-city-area")
 	if err != nil {
 		t.Fatalf("Error object should be nil but was: %s", err.Error())
 	}
@@ -202,23 +221,59 @@ func TestExploreCache(t *testing.T) {
 
 }
 
-func TestCatchCommand(t *testing.T) {
+func TestCatchCommandFailCatch(t *testing.T) {
 	clientInput := pokeapiclient.NewClient(50000, 10000)
-	configInput := &utils.Config{
+	configInput := &types.Config{
 		NEXT_URL: nil,
 		PREV_URL: nil,
 		Client:   clientInput,
-		Pokedex:  utils.Pokedex{},
+		Pokedex:  types.Pokedex{},
 	}
-	output, _ := utils.Catch(configInput, "pikachu")
+	output, _ := utils.Catch(configInput, StdDependency{}, "pikachu")
+	pikachuInformation := output.Response().(types.PokemonInformation)
+	if pikachuInformation.Caught != false {
+		t.Fatalf(`Pokemon should not be caught`)
+	}
 
-	if output.Response() == nil {
-		t.Fatalf(`CatchCommand returned nil response`)
+	_, err := configInput.Pokedex.GetPokemon("pikachu")
+	if err == nil {
+		t.Fatalf(`Pokedex did not store pikachu`)
+	}
+}
+func TestCatchCommandSuccessfulCatch(t *testing.T) {
+	clientInput := pokeapiclient.NewClient(50000, 10000)
+	configInput := &types.Config{
+		NEXT_URL: nil,
+		PREV_URL: nil,
+		Client:   clientInput,
+		Pokedex:  types.Pokedex{},
+	}
+	output, _ := utils.Catch(configInput, PassDependency{}, "pikachu")
+	pikachuInformation := output.Response().(types.PokemonInformation)
+	if pikachuInformation.Caught != true {
+		t.Fatalf(`Pokemon should be caught`)
 	}
 
 	_, err := configInput.Pokedex.GetPokemon("pikachu")
 	if err != nil {
 		t.Fatalf(`Pokedex did not store pikachu`)
+	}
+
+}
+
+func TestInspectCommand(t *testing.T) {
+	clientInput := pokeapiclient.NewClient(50000, 10000)
+	configInput := &types.Config{
+		NEXT_URL: nil,
+		PREV_URL: nil,
+		Client:   clientInput,
+		Pokedex:  types.Pokedex{},
+	}
+	utils.Catch(configInput, PassDependency{}, "pikachu")
+	output, _ := utils.Inspect(configInput, StdDependency{}, "pikachu")
+	pikachuInformation := output.Response().(types.PokemonInformation)
+	if pikachuInformation.Name != "pikachu" {
+		t.Fatalf(`Pokemon should be pikachu`)
 	}
 
 }
@@ -231,9 +286,9 @@ func contains(slice []string, value string) bool {
 	return false
 }
 
-func isEqual(output1 utils.CallbackResponse, output2 utils.CallbackResponse) bool {
-	locations1 := output1.Response().([]utils.Location)
-	locations2 := output2.Response().([]utils.Location)
+func isEqual(output1 types.CallbackResponse, output2 types.CallbackResponse) bool {
+	locations1 := output1.Response().([]types.Location)
+	locations2 := output2.Response().([]types.Location)
 	for i, _ := range locations1 {
 		if locations1[i].Name != locations2[i].Name {
 			return false

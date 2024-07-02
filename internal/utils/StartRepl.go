@@ -3,19 +3,27 @@ package utils
 import (
 	"bufio"
 	"fmt"
+	"math/rand"
 	"os"
 	"time"
 
 	"github.com/mdwiltfong/PokeDex/internal/pokeapiclient"
+	"github.com/mdwiltfong/PokeDex/internal/types"
 )
+
+type StdDependency struct{}
+
+func (s StdDependency) RandInt(baseExperience int) int {
+	return rand.Intn(baseExperience)
+}
 
 func StartRepl() {
 	client := pokeapiclient.NewClient(50000, 5*time.Second)
-	cfg := &Config{
+	cfg := &types.Config{
 		PREV_URL: nil,
 		NEXT_URL: nil,
 		Client:   client,
-		Pokedex:  Pokedex{},
+		Pokedex:  types.Pokedex{},
 	}
 	scanner := bufio.NewScanner(os.Stdin)
 	cliMap := CliCommandMap()
@@ -28,12 +36,12 @@ func StartRepl() {
 		sanitizedInput := SanitizeInput(input)
 		command, exists := cliMap[sanitizedInput[0]]
 		if exists {
-			var response CallbackResponse
+			var response types.CallbackResponse
 			var err error
 			if len(sanitizedInput) == 2 {
-				response, err = command.Callback(cfg, sanitizedInput[1])
+				response, err = command.Callback(cfg, StdDependency{}, sanitizedInput[1])
 			} else {
-				response, err = command.Callback(cfg, "")
+				response, err = command.Callback(cfg, StdDependency{}, "")
 			}
 			if err != nil {
 				fmt.Println(err.Error())
