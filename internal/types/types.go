@@ -170,7 +170,7 @@ type GetLocationsResponse struct {
 	Results  []Location
 }
 
-type CallbackFunction func(*Config, string) (CallbackResponse, error)
+type CallbackFunction func(*Config, Dependency, string) (CallbackResponse, error)
 
 type CliCommand struct {
 	Name        string
@@ -461,4 +461,8 @@ type PokemonInformation struct {
 		} `json:"type"`
 	} `json:"types"`
 	Weight int `json:"weight"`
+}
+
+type Dependency interface {
+	RandInt(baseExperience int) int
 }

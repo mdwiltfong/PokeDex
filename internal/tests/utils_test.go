@@ -11,6 +11,24 @@ import (
 	"github.com/mdwiltfong/PokeDex/internal/utils"
 )
 
+type StdDependency struct{}
+
+func (s StdDependency) RandInt(baseExperience int) int {
+	return 1
+}
+
+type FailDependency struct{}
+
+func (s FailDependency) RandInt(baseExperience int) int {
+	return 0
+}
+
+type PassDependency struct{}
+
+func (s PassDependency) RandInt(baseExperience int) int {
+	return 100
+}
+
 func TestSanitizeInput(t *testing.T) {
 
 	input := "  COMMAND INPUT   "
@@ -40,7 +58,7 @@ func TestMap(t *testing.T) {
 		Client:   clientInput,
 	}
 
-	utils.Map(configInput, "")
+	utils.Map(configInput, StdDependency{}, "")
 
 	_, exists := clientInput.Cache.Get("https://pokeapi.co/api/v2/location/")
 	if exists == false {
@@ -65,8 +83,8 @@ func TestMapb(t *testing.T) {
 		Client:   clientInput,
 	}
 
-	output1, _ := utils.Map(configInput, "")
-	output2, _ := utils.Mapb(configInput, "")
+	output1, _ := utils.Map(configInput, StdDependency{}, "")
+	output2, _ := utils.Mapb(configInput, StdDependency{}, "")
 
 	if isEqual(output1, output2) == false {
 		t.Fatalf(`The two responses are not equal`)
@@ -150,7 +168,7 @@ func TestExplore(t *testing.T) {
 		PREV_URL: nil,
 		Client:   clientInput,
 	}
-	output, _ := utils.Explore(configInput, "canalave-city-area")
+	output, _ := utils.Explore(configInput, StdDependency{}, "canalave-city-area")
 	if output.Response() == nil {
 		t.Fatalf(`Explore returned nil response`)
 	}
@@ -163,7 +181,7 @@ func TestExploreError404(t *testing.T) {
 		PREV_URL: nil,
 		Client:   clientInput,
 	}
-	output, err := utils.Explore(configInput, "LOL")
+	output, err := utils.Explore(configInput, StdDependency{}, "LOL")
 	if output.Response() == nil {
 		t.Fatalf(`Explore returned nil response`)
 	}
@@ -179,7 +197,7 @@ func TestExploreErrorNoInput(t *testing.T) {
 		PREV_URL: nil,
 		Client:   clientInput,
 	}
-	_, err := utils.Explore(configInput, "")
+	_, err := utils.Explore(configInput, StdDependency{}, "")
 
 	if err.Error() != "Please put in a location to explore" {
 		t.Fatalf("Error object should be nil but was: %s", err.Error())
@@ -192,7 +210,7 @@ func TestExploreCache(t *testing.T) {
 		PREV_URL: nil,
 		Client:   clientInput,
 	}
-	_, err := utils.Explore(configInput, "canalave-city-area")
+	_, err := utils.Explore(configInput, StdDependency{}, "canalave-city-area")
 	if err != nil {
 		t.Fatalf("Error object should be nil but was: %s", err.Error())
 	}
@@ -203,7 +221,7 @@ func TestExploreCache(t *testing.T) {
 
 }
 
-func TestCatchCommand(t *testing.T) {
+func TestCatchCommandFailCatch(t *testing.T) {
 	clientInput := pokeapiclient.NewClient(50000, 10000)
 	configInput := &types.Config{
 		NEXT_URL: nil,
@@ -211,10 +229,29 @@ func TestCatchCommand(t *testing.T) {
 		Client:   clientInput,
 		Pokedex:  types.Pokedex{},
 	}
-	output, _ := utils.Catch(configInput, "pikachu")
+	output, _ := utils.Catch(configInput, StdDependency{}, "pikachu")
+	pikachuInformation := output.Response().(types.PokemonInformation)
+	if pikachuInformation.Caught != false {
+		t.Fatalf(`Pokemon should not be caught`)
+	}
 
-	if output.Response() == nil {
-		t.Fatalf(`CatchCommand returned nil response`)
+	_, err := configInput.Pokedex.GetPokemon("pikachu")
+	if err == nil {
+		t.Fatalf(`Pokedex did not store pikachu`)
+	}
+}
+func TestCatchCommandSuccessfulCatch(t *testing.T) {
+	clientInput := pokeapiclient.NewClient(50000, 10000)
+	configInput := &types.Config{
+		NEXT_URL: nil,
+		PREV_URL: nil,
+		Client:   clientInput,
+		Pokedex:  types.Pokedex{},
+	}
+	output, _ := utils.Catch(configInput, PassDependency{}, "pikachu")
+	pikachuInformation := output.Response().(types.PokemonInformation)
+	if pikachuInformation.Caught != true {
+		t.Fatalf(`Pokemon should be caught`)
 	}
 
 	_, err := configInput.Pokedex.GetPokemon("pikachu")

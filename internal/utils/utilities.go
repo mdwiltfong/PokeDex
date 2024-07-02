@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"math/rand"
 	"strings"
 
 	"github.com/mdwiltfong/PokeDex/internal/types"
@@ -55,7 +54,7 @@ func CliCommandMap() types.CliCommandMapType {
 
 }
 
-func HelpCommand(*types.Config, string) (types.CallbackResponse, error) {
+func HelpCommand(config *types.Config, dependency types.Dependency, commandInput string) (types.CallbackResponse, error) {
 	fmt.Println("Welcome to the Pokedex!")
 	fmt.Println("Usage:")
 	fmt.Println("")
@@ -66,35 +65,11 @@ func HelpCommand(*types.Config, string) (types.CallbackResponse, error) {
 	return types.HelpCommandResponse{CliCommandMapType: CliCommandMap()}, nil
 }
 
-func ExitCommand(*types.Config, string) (types.CallbackResponse, error) {
+func ExitCommand(config *types.Config, dep types.Dependency, commandInput string) (types.CallbackResponse, error) {
 	return types.ExitCommandResponse{Message: "Okay! See you next time!"}, nil
 }
 
-type PokemonEncounter struct {
-	Pokemon struct {
-		Name string `json:"name"`
-		URL  string `json:"url"`
-	} `json:"pokemon"`
-	VersionDetails []struct {
-		EncounterDetails []struct {
-			Chance          int   `json:"chance"`
-			ConditionValues []any `json:"condition_values"`
-			MaxLevel        int   `json:"max_level"`
-			Method          struct {
-				Name string `json:"name"`
-				URL  string `json:"url"`
-			} `json:"method"`
-			MinLevel int `json:"min_level"`
-		} `json:"encounter_details"`
-		MaxChance int `json:"max_chance"`
-		Version   struct {
-			Name string `json:"name"`
-			URL  string `json:"url"`
-		} `json:"version"`
-	} `json:"version_details"`
-}
-
-func Map(config *types.Config, commandInput string) (types.CallbackResponse, error) {
+func Map(config *types.Config, dep types.Dependency, commandInput string) (types.CallbackResponse, error) {
 	url := "https://pokeapi.co/api/v2/location/"
 	if config.NEXT_URL != nil {
 		url = *config.NEXT_URL
@@ -121,7 +96,7 @@ func Map(config *types.Config, commandInput string) (types.CallbackResponse, err
 	return types.MapCommandResponse{Locations: locations.Results}, nil
 }
 
-func Mapb(config *types.Config, commandInput string) (types.CallbackResponse, error) {
+func Mapb(config *types.Config, dependency types.Dependency, commandInput string) (types.CallbackResponse, error) {
 
 	if config.PREV_URL == nil || *config.PREV_URL == "" {
 		fmt.Println("There are no previous pages")
@@ -161,12 +136,12 @@ func Mapb(config *types.Config, commandInput string) (types.CallbackResponse, er
 		if marshalingError != nil {
 			log.Fatalf("Failed to unmarshal response: %s\n", marshalingError)
 		}
-		return types.MapCommandResponse{locations.Results}, nil
+		return types.MapCommandResponse{Locations: locations.Results}, nil
 	}
 
 }
 
-func Explore(config *types.Config, commandInput string) (types.CallbackResponse, error) {
+func Explore(config *types.Config, dependency types.Dependency, commandInput string) (types.CallbackResponse, error) {
 	if commandInput == "" {
 		return types.ExploreCommandResponse{}, errors.New("Please put in a location to explore")
 	}
@@ -207,7 +182,7 @@ func Explore(config *types.Config, commandInput string) (types.CallbackResponse,
 
 }
 
-func Catch(config *types.Config, commandInput string) (types.CallbackResponse, error) {
+func Catch(config *types.Config, dependency types.Dependency, commandInput string) (types.CallbackResponse, error) {
 	if commandInput == "" {
 		return types.ExploreCommandResponse{}, errors.New("Please enter a pokemon you'd like to catch")
 	}
@@ -244,7 +219,7 @@ func Catch(config *types.Config, commandInput string) (types.CallbackResponse, e
 		}
 
 	}
-	randNum := rand.Intn(pokemonInformation.BaseExperience)
+	randNum := dependency.RandInt(pokemonInformation.BaseExperience)
 	chance := float64(randNum) / float64(pokemonInformation.BaseExperience)
 	fmt.Printf("Chance of catching %s: %f\n", pokemonInformation.Name, chance)
 	if chance > 0.5 {
