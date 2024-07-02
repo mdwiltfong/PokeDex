@@ -55,8 +55,12 @@ func CliCommandMap() types.CliCommandMapType {
 			Description: "Inspect a pokemon in the pokedex",
 			Callback:    Inspect,
 		},
+		"pokedex": {
+			Name:        "pokedex",
+			Description: "View all the pokemon in the pokedex",
+			Callback:    Pokedex,
+		},
 	}
-
 }
 
 func HelpCommand(config *types.Config, dependency types.Dependency, commandInput string) (types.CallbackResponse, error) {
@@ -245,6 +249,10 @@ func Inspect(config *types.Config, dependency types.Dependency, commandInput str
 		return types.InspectCommandResponse{}, err
 	}
 	return types.InspectCommandResponse{Pokemon: pokemon}, nil
+}
+
+func Pokedex(config *types.Config, dependency types.Dependency, commandInput string) (types.CallbackResponse, error) {
+	return types.PokedexCommandResponse{Pokedex: config.Pokedex}, nil
 }
 func Unmarshall[T types.GetLocationsResponse | types.PokemonEncountersResponse | types.PokemonInformation](val []byte, v *T) error {
 
