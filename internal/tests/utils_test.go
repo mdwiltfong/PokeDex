@@ -40,7 +40,7 @@ func TestSanitizeInput(t *testing.T) {
 }
 
 func TestCliCommandMap(t *testing.T) {
-	expectedCommands := []string{"help", "exit", "map", "mapb", "explore", "catch"}
+	expectedCommands := []string{"help", "exit", "map", "mapb", "explore", "catch", "inspect"}
 	outputCommands := utils.CliCommandMap()
 	for key, _ := range outputCommands {
 		output := contains(expectedCommands, key)
@@ -257,6 +257,23 @@ func TestCatchCommandSuccessfulCatch(t *testing.T) {
 	_, err := configInput.Pokedex.GetPokemon("pikachu")
 	if err != nil {
 		t.Fatalf(`Pokedex did not store pikachu`)
+	}
+
+}
+
+func TestInspectCommand(t *testing.T) {
+	clientInput := pokeapiclient.NewClient(50000, 10000)
+	configInput := &types.Config{
+		NEXT_URL: nil,
+		PREV_URL: nil,
+		Client:   clientInput,
+		Pokedex:  types.Pokedex{},
+	}
+	utils.Catch(configInput, PassDependency{}, "pikachu")
+	output, _ := utils.Inspect(configInput, StdDependency{}, "pikachu")
+	pikachuInformation := output.Response().(types.PokemonInformation)
+	if pikachuInformation.Name != "pikachu" {
+		t.Fatalf(`Pokemon should be pikachu`)
 	}
 
 }
